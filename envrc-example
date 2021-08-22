@@ -1,0 +1,33 @@
+# Copy this file into the root of your project and name it .envrc
+#
+#export ZEPHYR_BASE=$HOME/zephyrproject-main/zephyr
+export ZEPHYR_BASE=$HOME/zephyrproject/zephyr
+export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
+THISDIR=`basename $PWD`
+PARENTDIR=`dirname $PWD`
+[ -n "$PROJECT" ] || export PROJECT=`basename $PARENTDIR`
+[ -n "$PROGRAM" ] || export PROGRAM=$THISDIR
+#[ -n "$ZEPHYR_HELPER" ] || export ZEPHYR_HELPER=piranha
+#[ -n "$PORT" ] || export PORT=/dev/ttyUSB0
+#[ -n "$PORT" ] || export PORT=`ls -1 /dev/ttyUSB* /dev/tty.u* | head -1`
+#[ -n "$PORT" ] || export PORT=RTT
+[ -n "$DISTHOST" ] || export DISTHOST=firmware
+[ -n "$DISTDIR" ] || export DISTDIR=firmware/`basename $(dirname $PWD)`
+
+function setboard {
+	 export BOARD="$1";
+	 export BUILD_DIR=$PWD/build/${BOARD}
+	 if [ -d boards/*/${BOARD} ]
+	 then
+		export BOARD_ROOT=$PWD
+	 else
+		export BOARD_ROOT=$ZEPHYR_BASE
+	 fi
+}
+
+#setboard accessly_core
+#setboard accessly_lock_proto
+setboard accelerando_redsoil
+#setboard accelerando_barangaroo
+export ZEPHYR_SIGN=1
+export PATH=$PWD/zephyr-scripts:$PATH

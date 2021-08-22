@@ -1,4 +1,9 @@
 set -x
+if [ "$PORT" = "RTT" ] 
+then
+  JLinkRTTLogger -Device NRF52832_XXAA -RTTChannel 1 -if SWD -Speed 4000 rtt.log
+  exit 0
+fi
 [ -n "$ZEPHYR_HELPER" ] && MAYBEREMOTE="ssh -t ${ZEPHYR_HELPER}"
 #$MAYBEREMOTE kermit -l $PORT -b 115200 -C "set carrier-watch off,connect"
 $MAYBEREMOTE miniterm --raw $PORT 115200

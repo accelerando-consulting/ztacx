@@ -1,0 +1,9 @@
+if [ "$ZEPHYR_SIGN" != "1" ]
+then
+ 	true
+elif [ $BUILD_DIR/zephyr/zephyr.signed.hex -nt $BUILD_DIR/zephyr/zephyr.hex ]
+then
+	true
+else
+	west sign -d ${BUILD_DIR} -t imgtool -- --key ~/zephyrproject/bootloader/mcuboot/root-rsa-2048.pem
+fi

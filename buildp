@@ -1,0 +1,2 @@
+set -x
+west build -d ${BUILD_DIR} -p -b ${BOARD} -- -DBOARD_ROOT=${ZEPHYR_BOARD_ROOT}

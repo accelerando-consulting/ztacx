@@ -1,0 +1,12 @@
+if [ -n "$ZEPHYR_HELPER" ] ; then
+  MAYBEREMOTE="ssh -t ${ZEPHYR_HELPER} sudo"
+  Q='"'
+fi
+#$MAYBEREMOTE  openocd -c \"adapter usb location $USBLOC\" \
+$MAYBEREMOTE  openocd \
+	    -c "${Q}adapter driver jlink${Q}" \
+	    -c "${Q}transport select swd${Q}" \
+	    -f target/nrf52.cfg \
+	    -c init \
+	    -c reset \
+	    -c exit

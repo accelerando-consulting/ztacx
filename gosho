@@ -1,0 +1,1 @@
+clear && tmux clear-history && gosh && sho

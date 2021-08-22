@@ -1,0 +1,45 @@
+#!/usr/bin/perl
+use Modern::Perl;
+use File::Slurp qw(slurp);
+$ENV{ZEPHYR_BASE} //="$ENV{HOME}/zephyrproject/zephyr";
+my $word;
+
+if (@ARGV) {
+    # take from command line
+    $word = shift @ARGV;
+}
+else {
+    # take from stdin (for editor plugin)
+    $word = (<>);
+    chomp $word;
+}
+$word =~ s/^CONFIG_//;
+my $showhit = shift@ARGV;
+my $HITCOUNT=0;
+
+my $search = "find $ENV{ZEPHYR_BASE} -type f -name \"Kconfig*\" -print | xargs egrep -n \"^config .*${word}\"";
+my @HITS=`$search`;
+
+sub show_hit {
+    my ($file,$line) = @_;
+
+    my @content = slurp $file;
+    my $end = $line;
+    $end++ while ($end<$#content and $content[$end]!~ /^$/);
+    say @content[($line-1)..($end-1)];
+}
+ 
+my $hitnumber=1;
+for (@HITS) {
+    chomp;
+    my ($file,$line,$item) = split(/:/,$_,3);
+
+    if (@HITS==1 or (defined $showhit and $hitnumber==$showhit)) {
+	show_hit($file,$line);
+    }
+    elsif (!defined $showhit) {
+	say "$hitnumber: At $file line $line: $item";
+    }
+    $hitnumber++;
+}
+

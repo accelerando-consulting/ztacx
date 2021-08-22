@@ -1,2 +1,17 @@
-set -x
-west build -d ${BUILD_DIR} -p -b ${BOARD} -- -DBOARD_ROOT=${ZEPHYR_BOARD_ROOT}
+#!/bin/bash
+#set -x
+clear && tmux clear-history
+if [ -d "$BUILD_DIR" ] 
+then 
+  echo -n "Nuke the build directory ($BUILD_DIR) [Y/n]? "
+  read ans
+  if [ "$ans" = "n" -o "$ans" = "N" ]  
+  then
+    true
+  else
+    echo -n "Removing build dir..."
+    rm -rf "${BUILD_DIR}" 
+    echo "."
+  fi
+fi
+west build -d ${BUILD_DIR} -p -b ${BOARD} -- -DBOARD_ROOT=${BOARD_ROOT}

@@ -1,8 +1,10 @@
+CONFIG=config.h
+[ -f src/config.h ] && CONFIG=src/config.h
 perl -pi -e '
      if (/^#define BUILD_NUMBER (\d+)/) {
      	my $oldbuild=$1;
 	my $newbuild=$oldbuild+1;
 	s/BUILD_NUMBER $oldbuild/BUILD_NUMBER $newbuild/;
       }
-  ' src/config.h
-grep BUILD_NUMBER src/config.h
+  ' ${CONFIG}
+grep BUILD_NUMBER ${CONFIG}

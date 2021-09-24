@@ -6,4 +6,4 @@ then
 fi
 [ -n "$ZEPHYR_HELPER" ] && MAYBEREMOTE="ssh -t ${ZEPHYR_HELPER}"
 #$MAYBEREMOTE kermit -l $PORT -b 115200 -C "set carrier-watch off,connect"
-$MAYBEREMOTE miniterm --raw $PORT 115200
+$MAYBEREMOTE miniterm --rts 0 --raw $PORT 115200

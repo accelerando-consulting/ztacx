@@ -14,4 +14,4 @@ then
     echo "."
   fi
 fi
-west build -d ${BUILD_DIR} -p -b ${BOARD} -- -DBOARD_ROOT=${BOARD_ROOT}
+west build -d ${BUILD_DIR} -p -b ${BOARD} -- -DBOARD_ROOT=${BOARD_ROOT} "$@"

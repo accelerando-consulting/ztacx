@@ -42,12 +42,6 @@ void set_advertised_location(struct bt_data *bt_data, double lat, double lon)
 
 int fmt_location_str(char *buf, int buf_max, double lat1, double lon1) 
 {
-#if 0
-	return snprintf(buf, buf_max, "[nope,nope]");
-#else
-	//lat1=1.234567891;
-	//lon1=9.876543219;
-
 	int lat_i = lat1;
 	int lon_i = lon1;
 	double latf = lat1 - lat_i;
@@ -67,7 +61,6 @@ int fmt_location_str(char *buf, int buf_max, double lat1, double lon1)
 		);
 
 	return sz;
-#endif
 }
 
 const char *location_str() 
@@ -520,8 +513,8 @@ void gps_setup()
 		uart_irq_tx_disable(gps_dev);
 
 		//LOG_INF("Enabling RX ISR");
-		//uart_irq_callback_set(gps_dev, gps_isr);
-		//uart_irq_rx_enable(gps_dev);
+		uart_irq_callback_set(gps_dev, gps_isr);
+		uart_irq_rx_enable(gps_dev);
 	}
 	ready = true;
 }

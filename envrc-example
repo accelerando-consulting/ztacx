@@ -25,8 +25,6 @@ function setboard {
 	 fi
 }
 
-#setboard accessly_core
-#setboard accessly_lock_proto
 setboard accelerando_redsoil
 #setboard accelerando_barangaroo
 export ZEPHYR_SIGN=1

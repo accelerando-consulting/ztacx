@@ -1,5 +1,5 @@
-#ifndef _APP_GPS_H
-#define _APP_GPS_H 1
+#ifndef _ZTACX_APP_GPS_H
+#define _ZTACX_GPS_H 1
 
 extern double lat;
 extern double lon;
@@ -13,6 +13,5 @@ extern void set_advertised_location(struct bt_data *bt_data, double lat, double 
 
 extern void gps_setup();
 extern int gps_loop();
-
 
 #endif

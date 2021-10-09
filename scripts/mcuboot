@@ -1,0 +1,15 @@
+if [ -n "$ZEPHYR_HELPER" ] ; then
+  WITHHELPER="ssh -t ${ZEPHYR_HELPER}"
+  scp mcuboot.hex ${ZEPHYR_HELPER}:tmp/${PROGRAM}-mcuboot.hex
+  OBJFILE=tmp/${PROGRAM}-mcuboot.hex
+elif [ -f "mcuboot_$BOARD.hex" ] ; then
+  OBJFILE=mcuboot_$BOARD.hex
+else
+  OBJFILE=mcuboot.hex
+fi
+${WITHHELPER} sudo openocd -c "adapter usb location $USBLOC" \
+     -c "adapter driver jlink" \
+     -c "transport select swd" \
+     -f target/nrf52.cfg \
+     -c init \
+     -c "program ${OBJFILE} verify reset exit"

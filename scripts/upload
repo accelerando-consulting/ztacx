@@ -1,0 +1,15 @@
+if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=zephyr.signed ; else OBJECT=zephyr ; fi
+[ -n "$CONN" ] || CONN=`echo $PORT | sed -e 's/\/dev\/tty\.*//'`
+if [ -z "$ZEPHYR_HELPER" ]
+then 
+     #sudo  mcumgr --conn $CONN shell exec tas coffee
+     sudo  mcumgr --conn $CONN image upload ${BUILD_DIR}/zephyr/${OBJECT}.bin
+else
+     #scp mcumgr-upload ${ZEPHYR_HELPER}:tmp
+     rsync -Pv ${BUILD_DIR}/zephyr/${OBJECT}.hex ${ZEPHYR_HELPER}:tmp/${PROGRAM}.hex  
+     rsync -Pv ${BUILD_DIR}/zephyr/${OBJECT}.bin ${ZEPHYR_HELPER}:tmp/${PROGRAM}.bin
+     #ssh -t ${ZEPHYR_HELPER} sudo  mcumgr --conn $CONN shell exec tas coffee
+     set -x
+     ssh -t ${ZEPHYR_HELPER} tmp/mcumgr-upload ${PROGRAM} ${CONN}
+fi     
+

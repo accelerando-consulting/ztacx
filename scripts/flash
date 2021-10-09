@@ -1,0 +1,25 @@
+if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=zephyr.signed ; else OBJECT=zephyr ; fi
+if [ -z "$ZEPHYR_HELPER" ]
+then
+  if [ -z "$RUNNER" ]
+  then
+    # Use the default runner
+    time west flash -d ${BUILD_DIR} --hex-file ${BUILD_DIR}/zephyr/${OBJECT}.hex
+  elif [ "$RUNNER" = "openocd" ]
+  then
+    # Use openocd (outside of west)
+    time program
+  else
+    # Use west with the nominated runner
+    time west flash -d ${BUILD_DIR} --runner ${RUNNER} --hex-file ${BUILD_DIR}/zephyr/${OBJECT}.hex
+  fi
+else
+  rsync -Pv ${BUILD_DIR}/zephyr/${OBJECT}.hex ${ZEPHYR_HELPER}:tmp/${PROGRAM}.hex  
+  rsync -Pv ${BUILD_DIR}/zephyr/${OBJECT}.bin ${ZEPHYR_HELPER}:tmp/${PROGRAM}.bin
+  ssh -t ${ZEPHYR_HELPER} time sudo openocd -c \"adapter usb location ${USBLOC}\" \
+    -c \"adapter driver jlink\" \
+    -c \"transport select swd\" \
+    -f target/nrf52.cfg \
+    -c init \
+    -c \"program tmp/${PROGRAM}.hex verify reset exit\"
+fi

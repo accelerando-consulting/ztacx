@@ -1,0 +1,2 @@
+if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=zephyr.signed ; else OBJECT=zephyr ; fi
+west debug -d ${BUILD_DIR} --hex-file ${BUILD_DIR}/zephyr/${OBJECT}.hex

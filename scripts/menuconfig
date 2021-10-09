@@ -1,0 +1,1 @@
+west build -d ${BUILD_DIR} -t menuconfig

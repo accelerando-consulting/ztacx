@@ -1,0 +1,16 @@
+[ -n "$CONN" ] || CONN=`echo $PORT | sed -e 's/\/dev\/tty\.*//'`
+if [ $# -ge 1 ]
+then
+     HASH=$1
+else
+     HASH=`img_list | grep hash: | tail -1 | cut -d: -f2`
+fi     
+     
+if [ -z "$ZEPHYR_HELPER" ]
+then 
+     sudo  mcumgr --conn $CONN image confirm $HASH
+     sudo  mcumgr --conn $CONN reset
+else
+     ssh -t ${ZEPHYR_HELPER} mcumgr --conn $CONN image confirm $HASH
+     ssh -t ${ZEPHYR_HELPER} mcumgr --conn $CONN reset
+fi     

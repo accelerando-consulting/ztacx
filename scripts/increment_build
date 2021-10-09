@@ -1,0 +1,21 @@
+CONFIG=config.h
+for candidate in config.h src/config.h main.c src/main.c *.c src/*.c
+do
+  if [ -e "$candidate" ] 
+  then 
+    if grep -e '^#define BUILD_NUMBER' "$candidate" 2>&1 >/dev/null
+    then 
+      CONFIG="$candidate"
+      break;
+    fi
+  fi
+done
+[ -e "$CONFIG" ] || exit 1
+perl -pi -e '
+     if (/^#define BUILD_NUMBER (\d+)/) {
+     	my $oldbuild=$1;
+	my $newbuild=$oldbuild+1;
+	s/BUILD_NUMBER $oldbuild/BUILD_NUMBER $newbuild/;
+      }
+  ' ${CONFIG}
+grep BUILD_NUMBER ${CONFIG}

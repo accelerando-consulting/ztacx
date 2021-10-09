@@ -1,0 +1,16 @@
+if [ -z "$ZEPHYR_HELPER" ] 
+then
+  while : 
+  do
+     if pgrep -q JLinkRTTLogger  
+     then  
+	nc localhost 19021 
+     else 
+ 	clear 
+	echo "wait for RTT..." 
+	 sleep 5 
+     fi 
+  done	
+else
+  ssh -t ${ZEPHYR_HELPER} "while : ; do if pgrep -q JLinkRTTLogger ; then nc localhost 19021 ; else clear ; echo 'wait for RTT...' ; sleep 5 ; fi ; done"
+fi

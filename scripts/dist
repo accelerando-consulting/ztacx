@@ -1,0 +1,3 @@
+[ "$ZEPHYR_SIGN" = "1" ] || OBJECT=zephyr.signed && OBJECT=zephyr
+BUILD_NUMBER=`grep BUILD_NUMBER src/config.h | awk '{print $3}'`
+scp ${BUILD_DIR}/zephyr/${OBJECT}.bin ${DISTHOST}:${DISTDIR}/${PROGRAM}-build$BUILD_NUMBER.bin 

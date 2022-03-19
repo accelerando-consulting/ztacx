@@ -1,4 +1,3 @@
-set -x
 [ -n "$ZEPHYR_HELPER" ] && MAYBEREMOTE="ssh -t ${ZEPHYR_HELPER}"
 if [ "$PORT" = "RTT" ] 
 then

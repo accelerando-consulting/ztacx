@@ -1,5 +1,8 @@
-#ifndef _ZTACX_APP_GPS_H
-#define _ZTACX_GPS_H 1
+#pragma once
+#include "ztacx.h"
+#if !CONFIG_ZTACX_LEAF_GPS
+#error Please configure ZTACX_LEAF_GPS=y
+#else
 
 extern double lat;
 extern double lon;

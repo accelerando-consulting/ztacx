@@ -1,3 +1,5 @@
+#include "ztacx.h"
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -9,11 +11,6 @@
 #include <drivers/uart.h>
 #include <math.h>
 #include <bluetooth/bluetooth.h>
-
-#if CONFIG_LOG
-#include <logging/log.h>
-LOG_MODULE_DECLARE(app);
-#endif
 
 static bool ready = false;
 double lat = 0;
@@ -33,14 +30,14 @@ static const struct device *gps_dev;
 static char location_buf[32];
 static char time_buf[32];
 
-void set_advertised_location(struct bt_data *bt_data, double lat, double lon) 
+void set_advertised_location(struct bt_data *bt_data, double lat, double lon)
 {
 	//printk("    updating advertised location to %s\n", location_str());
 	memcpy((uint8_t *)bt_data->data+2, (uint8_t*)&lat, sizeof(lat));
 	memcpy((uint8_t *)bt_data->data+2+sizeof(lat), (uint8_t*)&lon, sizeof(lon));
 }
 
-int fmt_location_str(char *buf, int buf_max, double lat1, double lon1) 
+int fmt_location_str(char *buf, int buf_max, double lat1, double lon1)
 {
 	int lat_i = lat1;
 	int lon_i = lon1;
@@ -51,7 +48,7 @@ int fmt_location_str(char *buf, int buf_max, double lat1, double lon1)
 	int latf_i = latf*1e8;
 	int lonf_i = lonf*1e8;
 	int sz = 0;
-	
+
 	sz += snprintf(buf, buf_max,
 		       "[%d.%08d",lat_i,latf_i
 		);
@@ -63,13 +60,13 @@ int fmt_location_str(char *buf, int buf_max, double lat1, double lon1)
 	return sz;
 }
 
-const char *location_str() 
+const char *location_str()
 {
 	fmt_location_str(location_buf, sizeof(location_buf), lat, lon);
 	return location_buf;
 }
 
-const char *time_str() 
+const char *time_str()
 {
 	snprintf(time_buf, sizeof(time_buf), "%02d:%02d:%02d", hour, minute,second);
 	return time_buf;
@@ -82,23 +79,23 @@ static double convertToRadians(double val) {
    return val * PIx / 180;
 }
 
-double distance(double lat1, double lon1, double lat2, double lon2) 
+double distance(double lat1, double lon1, double lat2, double lon2)
 {
-        double dlon = convertToRadians(lon2 - lon1);
-        double dlat = convertToRadians(lat2 - lat1);
+	double dlon = convertToRadians(lon2 - lon1);
+	double dlat = convertToRadians(lat2 - lat1);
 
-        double a = ( pow(sin(dlat / 2), 2) + cos(convertToRadians(lat1))) * cos(convertToRadians(lat2)) * pow(sin(dlon / 2), 2);
-        double angle = 2 * asin(sqrt(a));
+	double a = ( pow(sin(dlat / 2), 2) + cos(convertToRadians(lat1))) * cos(convertToRadians(lat2)) * pow(sin(dlon / 2), 2);
+	double angle = 2 * asin(sqrt(a));
 
-        return angle * EARTH_RADIUS * 1000;
+	return angle * EARTH_RADIUS * 1000;
 }
 
-double distance_from(double lat2, double lon2) 
+double distance_from(double lat2, double lon2)
 {
 	return distance(lat, lon, lat2, lon2);
 }
 
-static void gps_location_change() 
+static void gps_location_change()
 {
 	static bool first = true;
 	static int64_t last_move = 0;
@@ -122,7 +119,7 @@ static void gps_location_change()
 		// movement smaller than jitter threshold, ignore
 		return;
 	}
-	
+
 	changed = true;
 	duration = (now - last_move)/1000;
 	if ((last_move==0) || (duration==0)) {
@@ -140,7 +137,7 @@ static void gps_location_change()
 	else {
 		from_start = distance_from(firstlat, firstlon);
 	}
-	
+
 	latwas = lat;
 	lonwas = lon;
 	last_move = now;
@@ -148,7 +145,7 @@ static void gps_location_change()
 }
 
 
-static int gps_location_line(char *buf) 
+static int gps_location_line(char *buf)
 {
 	//printk("    INFO $GPGLL %s\n", buf);
 #if CONFIG_NEWLIB_LIBC
@@ -171,12 +168,12 @@ static int gps_location_line(char *buf)
 			// that part
 			fieldpos=5;
 			buf+=4;
-		} 
+		}
 		else {
 			return -1;
 		}
 	}
-	
+
 
 	/*
 	 * GPGLL
@@ -203,11 +200,11 @@ static int gps_location_line(char *buf)
 	 *	 5    *75       checksum
 	 *   $--GLL,lll.ll,a,yyyyy.yy,a,hhmmss.ss,A llll.ll = Latitude of position
 	 *
-	 *   a = N or S 
-	 *   yyyyy.yy = Longitude of position 
-	 *   a = E or W 
-	 *   hhmmss.ss = UTC of position 
-	 *   A = status: A = valid data 
+	 *   a = N or S
+	 *   yyyyy.yy = Longitude of position
+	 *   a = E or W
+	 *   hhmmss.ss = UTC of position
+	 *   A = status: A = valid data
 	 */
 #if CONFIG_NEWLIB_LIBC
 	for (field=strtok(buf, sep);
@@ -243,7 +240,7 @@ static int gps_location_line(char *buf)
 			if (sscanf(decimal-2,"%lf",&mm)) {
 				//printk("    Oooh scanf works, got %lf\n", mm);
 				lat += mm/60;
-			}				
+			}
 			else {
 				strncpy(word, decimal-2,2);
 				word[2]='\0';
@@ -282,10 +279,10 @@ static int gps_location_line(char *buf)
 			if (sscanf(decimal-2,"%lf",&mm)) {
 				//printk("    Oooh scanf works, got %lf\n", mm);
 				lon += mm/60;
-			}				
+			}
 			else {
 				//FIXME: this code is busted.
-				
+
 				//
 				// Get MM the minutes whole part (1/60 deg)
 				strncpy(word, decimal-2,2);
@@ -298,7 +295,7 @@ static int gps_location_line(char *buf)
 				mm += val/100;
 				lon += mm/60;
 			}
-			
+
 
 			break;
 		case 4:
@@ -331,11 +328,11 @@ static int gps_location_line(char *buf)
 	}
 
 	gps_location_change();
-	
+
 	return 0;
 }
 
-static int gps_date_line(char *buf) 
+static int gps_date_line(char *buf)
 {
 	printk("    gps_date_line %s\n", buf);
 #if CONFIG_NEWLIB_LIBC
@@ -353,11 +350,11 @@ static int gps_date_line(char *buf)
 	 * UTC, day, month, year, and local time zone.
 	 *
 	 * $--ZDA,hhmmss.ss,xx,xx,xxxx,xx,xx
-	 * hhmmss.ss = UTC 
-	 * xx = Day, 01 to 31 
-	 * xx = Month, 01 to 12 
-	 * xxxx = Year 
-	 * xx = Local zone description, 00 to +/- 13 hours 
+	 * hhmmss.ss = UTC
+	 * xx = Day, 01 to 31
+	 * xx = Month, 01 to 12
+	 * xxxx = Year
+	 * xx = Local zone description, 00 to +/- 13 hours
 	 * xx = Local zone minutes description (same sign as hours)
 	 *
 	 */
@@ -403,7 +400,7 @@ static int gps_date_line(char *buf)
 			zone = atoi(field);
 			break;
 		case 6:
-			// sixth word is timezone minutes 
+			// sixth word is timezone minutes
 			zmin = atoi(field);
 			snprintf(word, sizeof(word), "%d-%02d-%02dT%02d:%02d:%02dZ%02d%02d",
 				 year, month, day, hour, minute, second, zone, zmin);
@@ -416,7 +413,7 @@ static int gps_date_line(char *buf)
 }
 
 
-static int gps_line(char *buf) 
+static int gps_line(char *buf)
 {
 	//LOG_INF("%s", log_strdup(buf));
 	char *comma = strchr(buf, ',');
@@ -426,7 +423,7 @@ static int gps_line(char *buf)
 		//LOG_WRN("Unrecognised GPS input [%s]", log_strdup(buf));
 		return -1;
 	}
-	
+
 	sentence = comma+1;
 	*comma = '\0';
 
@@ -449,14 +446,14 @@ static int gps_line(char *buf)
 		// $GPVTG - Track made good and ground speed
 	}
 	else if (strcmp(buf, "$GPGSA")==0) {
-		// $GPGSA - GPS DOP and active satellites 
+		// $GPGSA - GPS DOP and active satellites
 	}
 	else if (strcmp(buf, "$GPGSV")==0) {
 		// $GPGSV - GPS Satellites in view
 	}
 	else if (strcmp(buf, "$GPGZDA")==0) {
 		return gps_date_line(sentence);
-	}		
+	}
 	else {
 		// something we didn't handle above
 		printk("     GPS unhandled %s,%s\n", buf,sentence);
@@ -474,7 +471,7 @@ static void gps_rx_isr(void)
 		gps_buf_len = 0;
 		gps_buf[0] = '\0';
 	}
-	
+
 	do {
 		rx = uart_fifo_read(
 			gps_dev,
@@ -498,7 +495,7 @@ static void gps_isr(const struct device *unused, void *user_data)
 	}
 }
 
-void gps_setup() 
+void gps_setup()
 {
 	int err;
 
@@ -519,7 +516,7 @@ void gps_setup()
 	ready = true;
 }
 
-int gps_loop() 
+int gps_loop()
 {
 	if (!ready || !gps_dev) {
 		return -1;
@@ -535,7 +532,7 @@ int gps_loop()
 		int remain = strlen(nlpos);
 		memmove(gps_buf, nlpos, remain);
 		gps_buf_len = remain;
-		
+
 		gps_line(gps_line_buf);
 		++lines;
 	}

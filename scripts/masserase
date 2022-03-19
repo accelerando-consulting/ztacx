@@ -1,5 +1,6 @@
 [ -n "$ZEPHYR_HELPER" ] && WITHHELPER="ssh -t ${ZEPHYR_HELPER}"
-${WITHHELPER} sudo openocd -c \"adapter usb location ${USBLOC}\" \
+#${WITHHELPER} sudo openocd -c \"adapter usb location ${USBLOC}\" \
+${WITHHELPER} sudo openocd \
     -c \"adapter driver jlink\" \
     -c \"transport select swd\" \
     -f target/nrf52.cfg \

@@ -1,8 +1,8 @@
+#include "ztacx.h"
+
 #include <zephyr/types.h>
 
 #include <device.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <sys/printk.h>
 #include <sys/util.h>
 #include <sys/types.h>
@@ -15,12 +15,8 @@
 #include <sys/mutex.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/gatt.h>
 #include <bluetooth/uuid.h>
-
-#include "config.h"
-#include "globals.h"
-#include "modules.h"
-#include "bluetooth.h"
 
 #ifndef BT_UART_BUFSZ
 #define BT_UART_BUFSZ 256
@@ -28,6 +24,8 @@
 
 static const struct device *uart_dev;
 const struct bt_gatt_attr *bt_uart_tx_attr = NULL;
+bool bt_uart_notify=false;
+
 
 // #define MIN(a,b) ((a<=b)?a:b)
 
@@ -62,8 +60,8 @@ static ssize_t bt_uart_char_write(
 static void bt_uart_ccc_change(
 	const struct bt_gatt_attr *attr,
 	uint16_t value) {
-	notify_uart = (value == BT_GATT_CCC_NOTIFY);
-	LOG_INF("notify_uart: %s", notify_uart?"ON":"OFF");
+	bt_uart_notify = (value == BT_GATT_CCC_NOTIFY);
+	LOG_INF("bt_uart_notify: %s", bt_uart_notify?"ON":"OFF");
 }
 
 static struct bt_uuid_128 uart_service_uuid = BT_UUID_INIT_128(
@@ -117,7 +115,7 @@ static int btuart_char_out(uint8_t *data, size_t length, void *ctx)
 {
 	ARG_UNUSED(ctx);
 
-	if (notify_uart) {
+	if (bt_uart_notify) {
 		if (length <= 4) {
 			char buf[10];
 			memcpy(buf, data, length);
@@ -206,5 +204,3 @@ static const struct log_backend_api btlog_api = {
 	.init=btuart_log_init
 };
 LOG_BACKEND_DEFINE(bt_uart, btlog_api, true);
-
-

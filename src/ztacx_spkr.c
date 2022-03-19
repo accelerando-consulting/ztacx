@@ -1,13 +1,14 @@
-#include "config.h"
-#include "globals.h"
-
+#include "ztacx.h"
 #include <device.h>
-#include <stdlib.h>
 #include <shell/shell.h>
 #include <drivers/pwm.h>
 #include <drivers/gpio.h>
 
 static const struct device *spkr_dev = NULL;
+uint16_t spkr_value;
+uint16_t spkr_freq_value;
+uint16_t spkr_duration_value;
+int spkr_vol=100;
 
 #define SPKR_NODE DT_ALIAS(spkr)
 
@@ -62,17 +63,17 @@ int spkr_beep()
 		LOG_DBG("No beep, volume is zero");
 		return 0;
 	}
-	
+
 #ifdef PWM_CHANNEL
 	uint32_t period = 1000000/spkr_freq ;
 	uint32_t period2 = period*spkr_vol/200;
-	
+
 	LOG_DBG("Beep period=%u on-time=%d duration=%u", period, period2, spkr_duration);
 	int rc = pwm_pin_set_usec(spkr_dev, PWM_CHANNEL, period, period2, 0);
 	if (rc < 0) {
 		LOG_ERR("PWM error %d", rc);
 	}
-	
+
 	// Schedule a stop in {spkr_duration} msec
 	rc = k_work_schedule(&spkroff, K_MSEC(spkr_duration));
 	if (rc < 0) {
@@ -173,7 +174,7 @@ int cmd_test_spkr(const struct shell *shell, size_t argc, char **argv)
 			else {
 				LOG_INF("Saved volume setting %d", spkr_vol);
 			}
-			
+
 		}
 		shell_print(shell, "speaker volume is %d", spkr_vol);
 	}

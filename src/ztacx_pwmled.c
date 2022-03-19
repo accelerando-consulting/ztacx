@@ -1,12 +1,12 @@
-#include "config.h"
-#include "globals.h"
-
+#include "ztacx.h"
 #include <device.h>
-#include <stdlib.h>
 #include <shell/shell.h>
 #include <drivers/pwm.h>
 
 static const struct device *pwmled_dev = NULL;
+bool pwmled_value;
+uint16_t pwmled_duty_value;
+uint16_t pwmled_duration_value;
 
 #define PWMLED0_NODE DT_ALIAS(pwmled0)
 

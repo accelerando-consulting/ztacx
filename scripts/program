@@ -1,14 +1,27 @@
-set -x
+#set -x
 if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=build/${BOARD}/zephyr/zephyr.signed.hex ; else OBJECT=build/$BOARD/zephyr ; fi
 if [ $# -ge 1 ] ; then OBJECT=$1 ; fi
     #-c \"adapter usb location ${USBLOC}\" \
     #-c \"transport select swd\" \
     #-f interface/jlink.cfg \
 echo "PROGRAMMING ${BOARD} <= ${OBJECT}"
-sudo openocd \
-    -c "adapter usb location ${USBLOC}" \
-    -c "adapter driver jlink" \
-    -c "transport select swd" \
+if [ -z "$ZEPHYR_HELPER" ]
+then
+    sudo openocd \
+	-c "adapter usb location ${USBLOC}" \
+	-c "adapter driver jlink" \
+	-c "transport select swd" \
+	-f target/nrf52.cfg \
+	-c init \
+	-c "program ${OBJECT} verify reset exit"
+else
+   NAME=`basename "${OBJECT}"`
+   scp $OBJECT ${ZEPHYR_HELPER}:tmp/$NAME
+   ssh -t ${ZEPHYR_HELPER} time sudo openocd -c \"adapter usb location ${USBLOC}\" \
+    -c \"adapter driver jlink\" \
+    -c \"transport select swd\" \
     -f target/nrf52.cfg \
     -c init \
-    -c "program ${OBJECT} verify reset exit"
+    -c \"program tmp/${NAME} verify reset exit\"
+fi
+   

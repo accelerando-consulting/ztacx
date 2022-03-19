@@ -1,0 +1,69 @@
+mainmenu "Ztacx"
+	
+config ZTACX_NAME_BASE
+       string "Device name base (will have device ID appended)"
+       default "ztacx"
+
+config ZTACX_LEAF_I2C
+       bool
+       default n
+       
+config ZTACX_LEAF_I2C0
+       bool "Enable Ztacx leaf for I2C bus 0"
+       default n
+       select ZTACX_LEAF_I2C
+config ZTACX_LEAF_I2C1
+       bool "Enable Ztacx leaf for I2C bus 1"
+       default n
+       select ZTACX_LEAF_I2C
+
+config ZTACX_LEAF_BATTERY
+       bool "Enable Ztacx leaf for battery level monitoring"
+       default n
+
+config ZTACX_LEAF_BT_PERIPHERAL
+       bool "Enable Ztacx leaf for Bluetooth Peripheral mode"
+       default n
+
+config ZTACX_LEAF_BT_UART
+       bool "Enable Ztacx leaf for Bluetooth LE UART"
+       default n
+
+config ZTACX_LEAF_GPS
+       bool "Enable Ztacx leaf for serial GPS"
+       default n
+
+config ZTACX_LEAF_LED
+       bool "Enable Ztacx leaf for status LED(s)"
+       default y
+
+config ZTACX_LEAF_LIDAR
+       bool "Enable Ztacx leaf for LIDAR sensor(s)"
+       default y
+
+config ZTACX_LEAF_BUTTON
+       bool "Enable Ztacx leaf for input button(s)"
+       default n
+
+config ZTACX_LEAF_POWER
+       bool "Enable Ztacx leaf for power mode control"
+       default n
+
+config ZTACX_LEAF_PWMLED
+       bool "Enable Ztacx leaf for PWM LED"
+       default n
+
+config ZTACX_LEAF_SETTINGS
+       bool "Enable Ztacx leaf for peristent settings"
+       default n
+
+config ZTACX_LEAF_LORAWAN
+       bool "Enable Ztacx leaf for LoRaWAN"
+       default n
+       select ZTACX_LEAF_SETTINGS
+
+config ZTACX_LEAF_SPKR
+       bool "Enable Ztacx leaf for simple speaker"
+       default n
+
+

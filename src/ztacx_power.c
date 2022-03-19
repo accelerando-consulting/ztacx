@@ -1,9 +1,8 @@
-#include "globals.h"
-#include <stdio.h>
-#include <zephyr.h>
+#include "ztacx.h"
 #include <device.h>
 #include <init.h>
 #include <pm/pm.h>
+#include <pm/device.h>
 #include <hal/nrf_gpio.h>
 #include <shell/shell.h>
 
@@ -38,13 +37,13 @@ int power_setup(void)
 int power_off(void)
 {
 	LOG_WRN("Entering deep sleep");
-	pre_sleep();
+	ztacx_pre_sleep();
 
 	/* Above we disabled entry to deep sleep based on duration of
 	 * controlled delay.  Here we need to override that, then
 	 * force entry to deep sleep on any delay.
 	 */
-	pm_power_state_force((struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	pm_power_state_force(0u, (struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
 	k_sleep(K_FOREVER);
 
 	return -1; // if this gets reached, we failed
@@ -68,7 +67,7 @@ int power_sleep(int seconds)
 		LOG_WRN("Going to low power mode for %d seconds", seconds);
 	}
 
-	err = pm_device_state_set(cons, PM_DEVICE_STATE_LOW_POWER);
+	err = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 	if (err) {
 		LOG_ERR("Error setting low power state: %d", err);
 		return err;
@@ -76,7 +75,7 @@ int power_sleep(int seconds)
 
 	if (seconds) {
 		k_sleep(K_SECONDS(seconds));
-		err = pm_device_state_set(cons, PM_DEVICE_STATE_ACTIVE);
+		err = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
 	}
 
 	return err;
@@ -129,20 +128,4 @@ int cmd_test_poweroff(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 	power_off();
 	return -1;
-}
-
-
-int cmd_test_idleoff(const struct shell *shell, size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	int64_t now = k_uptime_get();
-	int64_t then = last_disconnect + idle_timeout;
-	int64_t remain = then - now;
-
-	shell_fprintf(shell, SHELL_NORMAL, "now=%lld last_disconnect=%lld timeout=%lld then=%lld remain=%lld\n",
-		      now, last_connect,idle_timeout,then,remain);
-
-	return 0;
 }

@@ -1,17 +1,19 @@
 #pragma once
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <zephyr.h>
-#include <init.h>
 #include <device.h>
 #include <devicetree.h>
+#include <init.h>
+#include <kernel.h>
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
 #include <shell/shell.h>
 #include <sys/printk.h>
 #include <sys/mutex.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
 
 #ifdef __main__
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
@@ -170,16 +172,24 @@ union ztacx_value
 /**
  * @brief a named variable (a persistent setting or a state value)
  */
-#define ZTACX_VALUE_NAME_MAX 40
 struct ztacx_variable
 {
-	char name[ZTACX_VALUE_NAME_MAX];
+	char name[CONFIG_ZTACX_VALUE_NAME_MAX];
 	enum ztacx_value_kind kind;
 	union ztacx_value value;
 	sys_snode_t node;
 };
 int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct ztacx_variable *v, int count);
 
+#define ZTACX_SETTING_FIND(n) if (!(n=ztacx_setting_find(#n))) {        \
+       LOG_ERR("APP ABORT Setting '"#n"' not found");                   \
+       return -1;                                                       \
+       }
+
+#define ZTACX_VAR_FIND(n) if (!(n=ztacx_variable_find(#n))) {		\
+       LOG_ERR("APP ABORT Variable '"#n"' not found");                  \
+       return -1;                                                       \
+       }
 
 //
 // functions for working with ztacx_variable items

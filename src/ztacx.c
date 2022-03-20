@@ -567,10 +567,10 @@ int ztacx_variable_set(struct ztacx_variable *s, const char *value)
 		s->value.val_byte = atoi(value);
 		break;
 	case ZTACX_VALUE_UINT16:
-		sscanf(value, "%hu", &s->value.val_uint16);
+		s->value.val_uint16 = atoi(value);
 		break;
 	case ZTACX_VALUE_INT64:
-		sscanf(value, "%lld", &s->value.val_int64);
+		s->value.val_int64 = atoi(value);
 		break;
 	default:
 		LOG_ERR("Unhandled variable type %d", (int)s->kind);

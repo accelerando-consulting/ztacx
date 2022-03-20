@@ -4,6 +4,11 @@ config ZTACX_NAME_BASE
        string "Device name base (will have device ID appended)"
        default "ztacx"
 
+config ZTACX_VALUE_NAME_MAX
+       int "Maximum length of the name of a setting or state variable"
+       default 40
+       
+
 config ZTACX_LEAF_I2C
        bool
        default n
@@ -39,11 +44,15 @@ config ZTACX_LEAF_LED
 
 config ZTACX_LEAF_LIDAR
        bool "Enable Ztacx leaf for LIDAR sensor(s)"
-       default y
+       default n
 
 config ZTACX_LEAF_BUTTON
        bool "Enable Ztacx leaf for input button(s)"
        default n
+
+config ZTACX_BUTTON_MAX
+       int "Maximum number of ztacx button inputs"
+       default 4
 
 config ZTACX_LEAF_POWER
        bool "Enable Ztacx leaf for power mode control"

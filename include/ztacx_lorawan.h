@@ -1,4 +1,5 @@
 #pragma once
+#if CONFIG_ZTACX_LEAF_LORAWAN
 
 #include <lorawan/lorawan.h>
 
@@ -10,3 +11,5 @@ ZTACX_CLASS_DEFINE(lorawan, ((struct ztacx_leaf_cb){
 			   .start=&ztacx_lorawan_start
 		}));
 ZTACX_LEAF_DEFINE(lorawan, lorawan, NULL);
+
+#endif

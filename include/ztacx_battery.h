@@ -1,5 +1,4 @@
 #pragma once
-
 /*
  * Settings:
  *	battery_read_interval_sec ZTACX_VALUE_UINT16
@@ -19,3 +18,4 @@ extern int ztacx_battery_start(struct ztacx_leaf *leaf);
 
 ZTACX_CLASS_DEFINE(battery, ((struct ztacx_leaf_cb){.init=&ztacx_battery_init,.start=&ztacx_battery_start}));
 ZTACX_LEAF_DEFINE(battery, battery, NULL);
+

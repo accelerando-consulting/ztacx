@@ -57,10 +57,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		"Access dynamic commands defined by ztacx leaves.", cmd_dynamic_execute, 2, 0),
 	SHELL_CMD_ARG(boot, NULL,"Initialise the ztacx framework.", cmd_ztacx_boot,0,0),
 	SHELL_CMD_ARG(status, NULL,"Show status of ztacx leaves.", cmd_ztacx_status,0,0),
-	SHELL_CMD_ARG(init, NULL,"Initialise a leaf.", cmd_ztacx_init,1,0),
-	SHELL_CMD_ARG(stop, NULL,"Stop a leaf.", cmd_ztacx_stop,1,0),
-	SHELL_CMD_ARG(start, NULL,"Start a leaf.", cmd_ztacx_start,1,0),
-	SHELL_CMD(settings, NULL,"Show/edit persistent settings.", cmd_ztacx_settings),
+	SHELL_CMD(init, NULL,"Initialise a leaf.", cmd_ztacx_init),
+	SHELL_CMD(stop, NULL,"Stop a leaf.", cmd_ztacx_stop),
+	SHELL_CMD(start, NULL,"Start a leaf.", cmd_ztacx_start),
+	SHELL_CMD(setting, NULL,"Show/edit persistent settings.", cmd_ztacx_settings),
 	SHELL_CMD(value, NULL,"Show/edit status of runtime variables.", cmd_ztacx_value),
 	SHELL_SUBCMD_SET_END
 	);
@@ -71,21 +71,29 @@ SHELL_CMD_REGISTER(ztacx, &m_sub_ztacx,
 
 static int ztacx_init(const struct device *_unused)
 {
+	LOG_INF("ztacx_init");
 	/*
 	 * Get the device ID
 	 */
+#if CONFIG_HWINFO
 	device_id_len = hwinfo_get_device_id(device_id, sizeof(device_id));
+#else
+	// CONFIG_HWINFO is not enabled, generate hardware ID 0x00000000
+	memset(device_id,0,sizeof(device_id));
+	device_id_len=4;
+#endif
 	char *p = device_id_str;
 	for (int i=0;i<device_id_len;i++) {
 		snprintk(p, 3, "%02x", (int)device_id[i]);
 		p+=2;
 	}
 	if (strlen(device_id_str) < 4) {
-		strcpy(device_id_short, device_id_str);
+	strcpy(device_id_short, device_id_str);
 	}
 		else {
 		strcpy(device_id_short, device_id_str + strlen(device_id_str) - 4);
 	}
+	
 	LOG_INF("Hardware id is '%s' [%s]", log_strdup(device_id_str), log_strdup(device_id_short));
 	strncat(name_setting, "-", sizeof(name_setting)-1);
 	strncat(name_setting, device_id_short, sizeof(name_setting)-1);
@@ -98,6 +106,7 @@ static int ztacx_init(const struct device *_unused)
 	sys_slist_init(&ztacx_leaves);
 	sys_mutex_unlock(&ztacx_registry_mutex);
 
+	LOG_DBG("ztacx_init OK");
 	return 0;
 }
 
@@ -110,11 +119,13 @@ int ztacx_class_register(struct ztacx_leaf_class *class)
 	}
 	sys_slist_append(&ztacx_classes, &class->node);
 	sys_mutex_unlock(&ztacx_registry_mutex);
+	LOG_DBG("ztacx_class_register %s OK", log_strdup(class->name));
 	return 0;
 }
 
 int ztacx_leaf_sys_init(struct ztacx_leaf *leaf)
 {
+	LOG_DBG("ztacx_leaf_sys_init %s", log_strdup(leaf->name));
 	int rc = 0;
 
 	LOG_INF("INIT %s/%s", log_strdup(leaf->class->name),
@@ -137,14 +148,16 @@ int ztacx_leaf_sys_init(struct ztacx_leaf *leaf)
 		}
 	}
 	else {
+		// no callback, but emit the same log messages as if there were
+		LOG_INF("READY %s", log_strdup(leaf->name));
 		leaf->ready = true;
 	}
-
 	return rc;
 }
 
 int ztacx_leaf_sys_start(struct ztacx_leaf *leaf)
 {
+	LOG_DBG("ztacx_leaf_sys_start %s", log_strdup(leaf->name));
 	int rc = 0;
 	if (!leaf->ready) {
 		return -ESRCH;
@@ -155,14 +168,18 @@ int ztacx_leaf_sys_start(struct ztacx_leaf *leaf)
 		rc = leaf->class->cb->start(leaf);
 		if (rc == 0) {
 			leaf->running=true;
-			LOG_INF("STARTED %s", log_strdup(leaf->name));
+			LOG_DBG("STARTED %s", log_strdup(leaf->name));
 		}
 		else {
 			LOG_WRN("START RESULT %s rc=%d", log_strdup(leaf->name), rc);
 		}
 	}
 	else {
+		// no callback, but emit the same log messages as if there were
+		LOG_INF("START %s/%s",
+			log_strdup(leaf->class->name), log_strdup(leaf->name));
 		leaf->running=true;
+		LOG_DBG("STARTED %s", log_strdup(leaf->name));
 	}
 	return rc;
 }
@@ -195,7 +212,7 @@ int ztacx_shell_cmd_register(struct shell_static_entry entry)
 
 static void ztacx_dynamic_cmd_get(size_t idx, struct shell_static_entry *entry)
 {
-	LOG_INF("%d", idx);
+	//LOG_INF("%d", idx);
 	if (idx < dynamic_cmd_cnt) {
 		/* Dynamic command table must be sorted alphabetically to ensure
 		 * correct CLI completion
@@ -326,7 +343,7 @@ int cmd_ztacx_value(const struct shell *shell, size_t argc, char **argv)
 	}
 #endif
 	else {
-		shell_print(shell, "app settings <setup|list|load|save|set|unretain>\n");
+		shell_print(shell, "ztacx value <list|get|set|unretain>\n");
 	}
 
 	return 0;
@@ -444,7 +461,9 @@ int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct zta
 		LOG_WRN("ztacx value list mutex is held too long");
 	}
 	for (int i=0; i<count; i++) {
-		//LOG_INF("setting %d: %s kind=%d", i, log_strdup(s[i].name), (int)s[i].kind);
+		LOG_INF("register %s %d/%d: %s kind=%d",
+			(list==&ztacx_variables)?"variable":"setting",
+			i, count, log_strdup(v[i].name), (int)(v[i].kind));
 		//LOG_HEXDUMP_INF(&(s[i].value), sizeof(s[i].value), "value dump");
 		sys_slist_append(list, &(v[i].node));
 	}
@@ -481,7 +500,7 @@ int ztacx_variable_describe(char *buf, int buf_max, const struct ztacx_variable 
 		snprintf(buf, buf_max, "%s=(uint16)[%d]", s->name, (int)s->value.val_uint16);
 		break;
 	case ZTACX_VALUE_INT64:
-		snprintf(buf, buf_max, "%s=(int64)[%lld]", s->name, s->value.val_int64);
+		snprintf(buf, buf_max, "%s=(int64)[%ld]", s->name, (long)s->value.val_int64); // fixme lld
 		break;
 	default:
 		LOG_ERR("   %s=(unk)[%d]", log_strdup(s->name), (int)s->kind);

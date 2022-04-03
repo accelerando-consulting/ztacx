@@ -15,3 +15,4 @@ target_sources_ifdef(CONFIG_ZTACX_LEAF_POWER         app PRIVATE src/ztacx_power
 target_sources_ifdef(CONFIG_ZTACX_LEAF_PWMLED        app PRIVATE src/ztacx_pwmled.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_SETTINGS      app PRIVATE src/ztacx_settings.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_SPKR          app PRIVATE src/ztacx_spkr.c)
+target_sources_ifdef(CONFIG_ZTACX_LEAF_TEMP          app PRIVATE src/ztacx_temp.c)

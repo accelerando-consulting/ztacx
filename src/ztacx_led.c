@@ -26,13 +26,16 @@ static const struct device *led_dev = NULL;
 #endif
 
 struct ztacx_led_context led_leaf_context={
-	.cycle=5000,
-	.duty=10,
+	.cycle=CONFIG_ZTACX_LED_CYCLE,
+	.duty=CONFIG_ZTACX_LED_DUTY,
 	.blink_value=0,
 };
 
 
+#if CONFIG_SHELL
 static int cmd_ztacx_led(const struct shell *shell, size_t argc, char **argv);
+#endif
+
 static void turn_led_on(struct k_work *work);
 static void turn_led_off(struct k_work *work);
 
@@ -104,6 +107,7 @@ int ztacx_led_post_sleep()
 }
 
 
+#if CONFIG_SHELL
 static int cmd_ztacx_led(const struct shell *shell, size_t argc, char **argv)
 {
 	bool do_setup = false;
@@ -133,12 +137,11 @@ static int cmd_ztacx_led(const struct shell *shell, size_t argc, char **argv)
 
 	return(0);
 }
-
+#endif
 
 
 static void turn_led_on(struct k_work *work)
 {
-	LOG_INF("");
 	gpio_pin_set(led_dev, PIN, 1);
 	if (work) {
 		if (led_leaf_context.blink_value) {
@@ -161,7 +164,6 @@ static void turn_led_on(struct k_work *work)
 
 static void turn_led_off(struct k_work *work)
 {
-	LOG_INF("");
 	gpio_pin_set(led_dev, PIN, 0);
 	if (work) {
 		if (led_leaf_context.blink_value) {

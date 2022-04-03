@@ -11,6 +11,8 @@ extern int ztacx_settings_add_kind(
 
 extern struct ztacx_variable *ztacx_setting_find(const char *name);
 extern int ztacx_setting_set(struct ztacx_variable *s, const char *value);
+extern void ztacx_settings_show();
 
 ZTACX_CLASS_DEFINE(settings, ((struct ztacx_leaf_cb){.init=&ztacx_settings_init,.start=&ztacx_settings_start}));
 ZTACX_LEAF_DEFINE(settings, settings, NULL);
+

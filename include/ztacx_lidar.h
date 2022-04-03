@@ -18,3 +18,4 @@ extern int ztacx_lidar_start(struct ztacx_leaf *leaf);
 
 ZTACX_CLASS_DEFINE(lidar, ((struct ztacx_leaf_cb){.init=&ztacx_lidar_init,.start=&ztacx_lidar_start}));
 ZTACX_LEAF_DEFINE(lidar, lidar, NULL);
+

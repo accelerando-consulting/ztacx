@@ -126,8 +126,6 @@ int ztacx_battery_start(struct ztacx_leaf *leaf)
 	return 0;
 }
 
-
-
 void battery_read(struct k_work *work)
 {
 	int rc;
@@ -148,17 +146,19 @@ void battery_read(struct k_work *work)
 		// reference, so FSR would be 3.6v
 		//
 		// Divider is 1M-1M so scale by 2x
-		//int div_low = battery_settings[SETTING_DIVIDER_LOW].value.val_uint16;
-		//int div_high = battery_settings[SETTING_DIVIDER_HIGH].value.val_uint16;
-		//val = 3600 * (raw / 1024.0) * (div_high+div_low) / div_low;
-		//LOG_INF("Naive millivolt conversion is %d", val);
+		int div_low = battery_settings[SETTING_DIVIDER_LOW].value.val_uint16;
+		int div_high = battery_settings[SETTING_DIVIDER_HIGH].value.val_uint16;
+		val = 3600 * (raw / 1024.0) * (div_high+div_low) / div_low;
+		LOG_DBG("Naive millivolt conversion is %d", val);
 
-		val = raw;
+		/*
+		  val = raw;
 		adc_raw_to_millivolts(adc_ref_internal(battery_adc),
 				      battery_acc.gain,
 				      battery_asp.resolution,
 				      &val);
 		LOG_DBG("Zephyr millivolt conversion is %d", val);
+		*/
 
 		int delta = abs(val - battery_values[VALUE_MILLIVOLTS].value.val_uint16);
 		int threshold = battery_settings[SETTING_MILLIVOLT_CHANGE_THRESHOLD].value.val_uint16;

@@ -352,7 +352,7 @@ int cmd_ztacx_settings(const struct shell *shell, size_t argc, char **argv)
 		LOG_INF("settings_save");
 		settings_save();
 	}
-	else if (strcmp(argv[1], "set")==0) {
+	else if ((argc>=4) && strcmp(argv[1], "set")==0) {
 		int err;
 		const char *value = argv[3];
 		struct ztacx_variable *s= ztacx_setting_find(argv[2]);
@@ -366,12 +366,28 @@ int cmd_ztacx_settings(const struct shell *shell, size_t argc, char **argv)
 			shell_print(shell, "Setting update failed for '%s': error %d", argv[2], err);
 			return -EINVAL;
 		}
+		else {
+			char desc[132];
+			ztacx_variable_describe(desc,sizeof(desc), s);
+			shell_print(shell, "updated: %s", desc);
+		}
 	}
-#if CONFIG_APP_RETENTION
+	else if ((argc==3) && strcmp(argv[1], "get")==0) {
+
+		struct ztacx_variable *s= ztacx_setting_find(argv[2]);
+		if (!s) {
+			shell_print(shell, "No setting named '%s'", argv[2]);
+			return -ENOENT;
+		}
+		char desc[132];
+		ztacx_variable_describe(desc,sizeof(desc), s);
+		shell_print(shell, "%s", desc);
+	}
 	else if (strcmp(argv[1], "unretain")==0) {
+#if CONFIG_APP_RETENTION
 		retained_erase();
-	}
 #endif
+	}
 	else {
 		shell_print(shell, "app settings <setup|list|load|save|set|unretain>\n");
 	}
@@ -515,4 +531,16 @@ int ztacx_setting_set(struct ztacx_variable *s, const char *value)
 	ztacx_variable_describe(desc,sizeof(desc), s);
 	LOG_INF("Saved %s", log_strdup(desc));
 	return err;
+}
+
+void ztacx_settings_show()
+{
+	sys_slist_t *list = &ztacx_settings;
+	struct ztacx_variable *s;
+	char desc[132];
+	LOG_INF("Configuration settings:");
+	SYS_SLIST_FOR_EACH_CONTAINER(list, s, node) {
+		ztacx_variable_describe(desc,sizeof(desc), s);
+		LOG_INF("    %s", desc);
+	}
 }

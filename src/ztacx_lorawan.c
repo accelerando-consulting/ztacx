@@ -30,6 +30,7 @@ enum lorawan_setting_index {
 	SETTING_ADR,
 	SETTING_SEND_RETRIES,
 	SETTING_JOIN_RETRIES,
+	SETTING_ENABLE,
 };
 
 static struct ztacx_variable lorawan_settings[] = {
@@ -44,8 +45,8 @@ static struct ztacx_variable lorawan_settings[] = {
 	{"lorawan_channel_mask", ZTACX_VALUE_STRING},
 	{"lorawan_adr", ZTACX_VALUE_BOOL},
 	{"lorawan_send_retries", ZTACX_VALUE_UINT16},
-	{"lorawan_join_retries", ZTACX_VALUE_UINT16, {.val_uint16=10}}
-
+	{"lorawan_join_retries", ZTACX_VALUE_UINT16, {.val_uint16=10}},
+	{"lorawan_enable", ZTACX_VALUE_BOOL, {.val_bool=true}},
 };
 
 static void dl_callback(uint8_t port, bool data_pending,
@@ -104,9 +105,9 @@ static int parse_hex_setting_words(struct ztacx_variable *settings, int index, i
 	}
 
 	for (int word=0; word<words;word++) {
-		if (sscanf(s+(word*4), "%4hx", words_r+word) != 1) {
-			LOG_ERR("Parse of settings %s failed at word %d",log_strdup(name), word);
-			return -EINVAL;
+		char word_buf[5] = {s[word*4],s[word*4+1],s[word*4+2],s[word*4+3],0};
+		if (words_r) {
+			words_r[word]=strtoul(word_buf, NULL, 16);
 		}
 	}
 	if (count_r) *count_r = words;
@@ -145,7 +146,7 @@ static int parse_hex_setting(struct ztacx_variable *settings, int index, int min
 
 int ztacx_lorawan_start(struct ztacx_leaf *leaf)
 {
-	int rc, err;
+	int rc=0, err=0;
 	uint16_t channel_mask[6]={0x0000,0x0000,0x0000,0x0000,0x0000,0x0000};
 	int channel_mask_len = 0;
 
@@ -155,6 +156,12 @@ int ztacx_lorawan_start(struct ztacx_leaf *leaf)
 	};
 
 	struct lorawan_join_config parsed_join_cfg;
+
+	if (!LORAWAN_SETTING(ENABLE,bool)) {
+		LOG_INF("Lorawan is disabled by settings");
+		return -ENOTSUP;
+	}
+
 	if (!join_cfg && LORAWAN_SETTING(AUTH_ABP,bool)) {
 		// ABP mode requires dev_eui, dev_addr, nwk_key, app_key
 		parsed_join_cfg.mode = LORAWAN_ACT_ABP;
@@ -208,7 +215,7 @@ int ztacx_lorawan_start(struct ztacx_leaf *leaf)
 		LOG_INF("LoRaWAN OTAA configured");
 	}
 	else if (!join_cfg) {
-		LOG_INF("LoRaWAN Authentication not (yet) configured");
+		LOG_WRN("LoRaWAN Authentication not (yet) configured");
 		return -EINVAL;
 	}
 
@@ -264,7 +271,6 @@ int ztacx_lorawan_start(struct ztacx_leaf *leaf)
 		LOG_ERR("failed to join, aborting");
 		return -ENETUNREACH;
 	}
-	LOG_INF("LoRaWAN Joined");
+	LOG_INF("LoRaWAN Joined rc=%d", rc);
 	return rc;
-
 }

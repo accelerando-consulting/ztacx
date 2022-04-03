@@ -12,6 +12,7 @@ config ZTACX_VALUE_NAME_MAX
 config ZTACX_LEAF_I2C
        bool
        default n
+       select I2C
        
 config ZTACX_LEAF_I2C0
        bool "Enable Ztacx leaf for I2C bus 0"
@@ -25,6 +26,7 @@ config ZTACX_LEAF_I2C1
 config ZTACX_LEAF_BATTERY
        bool "Enable Ztacx leaf for battery level monitoring"
        default n
+       select ADC
 
 config ZTACX_LEAF_BT_PERIPHERAL
        bool "Enable Ztacx leaf for Bluetooth Peripheral mode"
@@ -40,7 +42,18 @@ config ZTACX_LEAF_GPS
 
 config ZTACX_LEAF_LED
        bool "Enable Ztacx leaf for status LED(s)"
-       default y
+       default n
+       select GPIO
+
+config ZTACX_LED_CYCLE
+       int "Defalt LED blink rate in milliseconds"
+       default 1000
+       depends on ZTACX_LEAF_LED 
+
+config ZTACX_LED_DUTY
+       int "Defalt LED duty cycle in percent"
+       default 50
+       depends on ZTACX_LEAF_LED 
 
 config ZTACX_LEAF_LIDAR
        bool "Enable Ztacx leaf for LIDAR sensor(s)"
@@ -49,14 +62,18 @@ config ZTACX_LEAF_LIDAR
 config ZTACX_LEAF_BUTTON
        bool "Enable Ztacx leaf for input button(s)"
        default n
+       select GPIO
 
 config ZTACX_BUTTON_MAX
        int "Maximum number of ztacx button inputs"
        default 4
+       depends on ZTACX_LEAF_BUTTON
 
 config ZTACX_LEAF_POWER
        bool "Enable Ztacx leaf for power mode control"
        default n
+       select PM
+       select PM_DEVICE
 
 config ZTACX_LEAF_PWMLED
        bool "Enable Ztacx leaf for PWM LED"
@@ -65,6 +82,7 @@ config ZTACX_LEAF_PWMLED
 config ZTACX_LEAF_SETTINGS
        bool "Enable Ztacx leaf for peristent settings"
        default n
+       
 
 config ZTACX_LEAF_LORAWAN
        bool "Enable Ztacx leaf for LoRaWAN"
@@ -74,5 +92,10 @@ config ZTACX_LEAF_LORAWAN
 config ZTACX_LEAF_SPKR
        bool "Enable Ztacx leaf for simple speaker"
        default n
+
+config ZTACX_LEAF_TEMP
+       bool "Enable Ztacx leaf for temperature monitoring"
+       default n
+
 
 

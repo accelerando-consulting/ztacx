@@ -221,3 +221,52 @@ extern int ztacx_leaf_sys_init(struct ztacx_leaf *leaf);
 extern int ztacx_leaf_sys_start(struct ztacx_leaf *leaf);
 extern int ztacx_pre_sleep(void);
 extern int ztacx_post_sleep(void);
+
+
+#ifdef __main__
+#if CONFIG_ZTACX_LEAF_SETTINGS
+#include "ztacx_settings.h"
+#endif
+#if CONFIG_ZTACX_LEAF_BATTERY
+#include "ztacx_battery.h"
+#endif
+#if CONFIG_ZTACX_LEAF_BT_CENTRAL
+#include "ztacx_bt_central.h"
+#endif
+#if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
+#include "ztacx_bt_peripheral.h"
+#endif
+#if CONFIG_ZTACX_LEAF_BT_UART
+#include "ztacx_bt_uart.h"
+#endif
+#if CONFIG_ZTACX_LEAF_BUTTON
+#include "ztacx_button.h"
+#endif
+#if CONFIG_ZTACX_LEAF_GPS
+#include "ztacx_gps.h"
+#endif
+#if CONFIG_ZTACX_LEAF_I2C0 || CONFIG_ZTACX_LEAF_I2C1
+#include "ztacx_i2c.h"
+#endif
+#if CONFIG_ZTACX_LEAF_LED
+#include "ztacx_led.h"
+#endif
+#if CONFIG_ZTACX_LEAF_LIDAR
+#include "ztacx_lidar.h"
+#endif
+#if CONFIG_ZTACX_LEAF_LORAWAN
+#include "ztacx_lorawan.h"
+#endif
+#if CONFIG_ZTACX_LEAF_POWER
+#include "ztacx_power.h"
+#endif
+#if CONFIG_ZTACX_LEAF_PWMLED
+#include "ztacx_pwmled.h"
+#endif
+#if CONFIG_ZTACX_LEAF_SPKR
+#include "ztacx_spkr.h"
+#endif
+#if CONFIG_ZTACX_LEAF_TEMP
+#include "ztacx_temp.h"
+#endif
+#endif

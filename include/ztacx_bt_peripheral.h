@@ -20,13 +20,10 @@ enum peripheral_connection_state {
 	PERIPHERAL_STATE_DISCONNECTING
 };
 
+extern int ztacx_bt_peripheral_setup(struct ztacx_leaf *leaf);
+extern int ztacx_bt_peripheral_start(struct ztacx_leaf *leaf);
 
-
-extern int peripheral_setup();
-extern int central_setup();
-extern int central_loop();
-extern int cmd_test_peripheral(const struct shell *shell, size_t argc, char **argv);
-extern int cmd_test_central(const struct shell *shell, size_t argc, char **argv);
-extern int bluetooth_uart_setup(const char *device);
+ZTACX_CLASS_DEFINE(bt_peripheral, ((struct ztacx_leaf_cb){.init=&ztacx_bt_peripheral_init,.start=&ztacx_bt_peripheral_start}));
+ZTACX_LEAF_DEFINE(bt_peripheral, bt_peripheral, NULL);
 
 #endif

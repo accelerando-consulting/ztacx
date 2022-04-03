@@ -14,5 +14,6 @@ ZTACX_CLASS_AUTO_DEFINE(led);
 
 ZTACX_LEAF_DEFINE(led, led, &led_leaf_context);
 
-//extern void set_led(int duty, int cycle);
+#if CONFIG_SHELL
 extern int cmd_test_led(const struct shell *shell, size_t argc, char **argv);
+#endif

@@ -1,13 +1,7 @@
 #include "ztacx.h"
 
 #include <zephyr/types.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
 #include <drivers/uart.h>
 #include <math.h>
 #include <bluetooth/bluetooth.h>

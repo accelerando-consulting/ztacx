@@ -30,9 +30,9 @@ enum battery_setting_index {
 
 static struct ztacx_variable battery_settings[] = {
 	{"battery_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=60}},
-	{"battery_divider_high", ZTACX_VALUE_UINT16,{.val_int64 = 1000}},
-	{"battery_divider_low", ZTACX_VALUE_UINT16,{.val_int64 = 1000}},
-	{"battery_millivolt_change_threshold", ZTACX_VALUE_UINT16,{.val_int64 = 50}},
+	{"battery_divider_high", ZTACX_VALUE_UINT16,{.val_uint16 = 1000}},
+	{"battery_divider_low", ZTACX_VALUE_UINT16,{.val_uint16 = 1000}},
+	{"battery_millivolt_change_threshold", ZTACX_VALUE_UINT16,{.val_uint16 = 50}},
 };
 
 enum battery_value_index {
@@ -107,11 +107,11 @@ int ztacx_battery_init(struct ztacx_leaf *leaf)
 
 	if (err) {
 		LOG_ERR("  battery setup failed (%d)", err);
-		battery_values[VALUE_OK].value.val_bool = false;
+		ztacx_variable_value_set_bool(&battery_values[VALUE_OK], false);
 	}
 	else {
 		LOG_INF("  battery adc on channel %u", ADC_CHANNEL);
-		battery_values[VALUE_OK].value.val_bool = true;
+		ztacx_variable_value_set_bool(&battery_values[VALUE_OK], true);
 	}
 
 	return err;
@@ -135,7 +135,7 @@ void battery_read(struct k_work *work)
 		return;
 	}
 
-	ztacx_variable_get(&(battery_values[VALUE_LEVEL_PERCENT]), &battery_level_percent, sizeof(battery_level_percent));
+	ztacx_variable_value_get(&(battery_values[VALUE_LEVEL_PERCENT]), &battery_level_percent, sizeof(battery_level_percent));
 	rc = adc_read(battery_adc, &battery_asp);
 	if (rc == 0) {
 		int32_t raw = battery_samples[0];
@@ -172,8 +172,8 @@ void battery_read(struct k_work *work)
 			//battery_level_percent = (val - 2240) * 100 / (3340-2240);
 			// 3s 18650 presume 12300mv=full, 9600mv=flat
 			//battery_level_percent = (val - 9600) * 100 / (12300-9600);
-			//1s lipo presume 4100mv=full, 2800=flat
-			battery_level_percent = (val - 2800) * 100 / (4100-2800);
+			//1s lipo presume 4200mv=full, 2800=flat
+			battery_level_percent = (val - 2800) * 100 / (4200-2800);
 
 
 			LOG_INF("battery voltage ~ %d mV (raw %d, %d bogo%%)",
@@ -226,8 +226,8 @@ int cmd_ztacx_battery(const struct shell *shell, size_t argc, char **argv)
 	uint8_t battery_level_percent;
 	uint16_t battery_millivolts;
 
-	ztacx_variable_get(&(battery_values[VALUE_LEVEL_PERCENT]), &battery_level_percent, sizeof(battery_level_percent));
-	ztacx_variable_get(&(battery_values[VALUE_MILLIVOLTS]), &battery_millivolts, sizeof(battery_millivolts));
+	ztacx_variable_value_get(&(battery_values[VALUE_LEVEL_PERCENT]), &battery_level_percent, sizeof(battery_level_percent));
+	ztacx_variable_value_get(&(battery_values[VALUE_MILLIVOLTS]), &battery_millivolts, sizeof(battery_millivolts));
 	shell_fprintf(shell, SHELL_NORMAL,"Battery voltage %dmV (%d%%)\n", (int)battery_millivolts, (int)battery_level_percent);
 	return 0;
 }

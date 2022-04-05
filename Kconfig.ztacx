@@ -59,6 +59,10 @@ config ZTACX_LEAF_LIDAR
        bool "Enable Ztacx leaf for LIDAR sensor(s)"
        default n
 
+config ZTACX_LEAF_LUX
+       bool "Enable Ztacx leaf for light level sensor(s)"
+       default n
+
 config ZTACX_LEAF_BUTTON
        bool "Enable Ztacx leaf for input button(s)"
        default n

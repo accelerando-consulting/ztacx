@@ -2,7 +2,7 @@
 
 extern int ztacx_settings_init(struct ztacx_leaf *leaf);
 extern int ztacx_settings_start(struct ztacx_leaf *leaf);
-extern int ztacx_settings_delayed_load();
+extern int ztacx_settings_load();
 
 extern int ztacx_settings_register(struct ztacx_variable *s, int count);
 extern int ztacx_settings_add_kind(

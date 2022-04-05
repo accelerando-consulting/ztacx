@@ -2,7 +2,7 @@ if [ -z "$ZEPHYR_HELPER" ]
 then
   while : 
   do
-     if pgrep -q JLinkRTTLogger  
+     if pgrep JLinkRTTLogger  >/dev/null
      then  
 	nc localhost 19021 
      else 
@@ -12,5 +12,5 @@ then
      fi 
   done	
 else
-  ssh -t ${ZEPHYR_HELPER} "while : ; do if pgrep -q JLinkRTTLogger ; then nc localhost 19021 ; else clear ; echo 'wait for RTT...' ; sleep 5 ; fi ; done"
+  ssh -t ${ZEPHYR_HELPER} "while : ; do if pgrep JLinkRTTLogger ; then nc localhost 19021 ; else clear ; echo 'wait for RTT...' ; sleep 5 ; fi ; done"
 fi

@@ -18,28 +18,26 @@ static const struct device *temp_dev;
 
 enum temp_setting_index {
 	SETTING_READ_INTERVAL_SEC = 0,
-	SETTING_MILLIDEGREE_CHANGE_THRESHOLD,
+	SETTING_CENTIDEGREE_CHANGE_THRESHOLD,
 };
 
 static struct ztacx_variable temp_settings[] = {
 	{"temp_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=60}},
-	{"temp_millidegree_change_threshold", ZTACX_VALUE_UINT16,{.val_int64 = 500}},
+	{"temp_centidegree_change_threshold", ZTACX_VALUE_UINT16,{.val_int16 = 50}},
 };
 
 enum temp_value_index {
 	VALUE_OK = 0,
-	VALUE_MILLIDEGREE,
+	VALUE_CENTIDEGREE,
 	VALUE_NOTIFY,
 };
 static struct ztacx_variable temp_values[]={
 	{"temp_ok", ZTACX_VALUE_BOOL, {.val_bool=false}},
-	{"temp_millidegree", ZTACX_VALUE_INT64, {.val_int64=0}},
+	{"temp_centidegree", ZTACX_VALUE_INT16, {.val_int16=0}},
 	{"temp_notify", ZTACX_VALUE_BOOL, {.val_bool=false}},
 };
 
 static struct k_work_delayable temp_work;
-
-const struct bt_gatt_attr *temp_millidegree_attr = NULL;
 
 void temp_read(struct k_work *work);
 int cmd_ztacx_temp(const struct shell *shell, size_t argc, char **argv);
@@ -104,25 +102,19 @@ void temp_read(struct k_work *work)
 	}
 
 	double temperature = sensor_value_to_double(&temp_value);
-	int val = temperature * 1000;
+	int val = temperature * 100;
 
-	int delta = abs(val - temp_values[VALUE_MILLIDEGREE].value.val_int64);
+	int delta = abs(val - temp_values[VALUE_CENTIDEGREE].value.val_int16);
 
-	int threshold = temp_settings[SETTING_MILLIDEGREE_CHANGE_THRESHOLD].value.val_int64;
+	int threshold = temp_settings[SETTING_CENTIDEGREE_CHANGE_THRESHOLD].value.val_int16;
 	static bool first_reading = true;
 	bool significant_change = !first_reading && (delta >= threshold);
 
 	if (first_reading || significant_change) {
 		first_reading = false;
 
-		ztacx_variable_value_set(&(temp_values[VALUE_MILLIDEGREE]), &val);
-		LOG_INF("temperature ~ %d mC", (int)val);
-
-#if CONFIG_BT_GATT_CLIENT
-			if (temp_values[VALUE_NOTIFY].value.val_bool) {
-				bt_gatt_notify(NULL, temp_millidegree_attr, &val, sizeof(val));
-			}
-#endif
+		ztacx_variable_value_set(&(temp_values[VALUE_CENTIDEGREE]), &val);
+		LOG_INF("temperature ~ %d cC", (int)val);
 	}
 
 	if (work){
@@ -141,9 +133,9 @@ int cmd_ztacx_temp(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	temp_read(NULL);
-	uint64_t temp_millidegree;
+	int16_t temp_centidegree;
 
-	ztacx_variable_get(&(temp_values[VALUE_MILLIDEGREE]), &temp_millidegree, sizeof(temp_millidegree));
-	shell_fprintf(shell, SHELL_NORMAL,"Temperature %dmC\n", (int)temp_millidegree);
+	ztacx_variable_value_get(&(temp_values[VALUE_CENTIDEGREE]), &temp_centidegree, sizeof(temp_centidegree));
+	shell_fprintf(shell, SHELL_NORMAL,"Temperature %d.%02dC\n", (int)(temp_centidegree/100), (int)(temp_centidegree%100));
 	return 0;
 }

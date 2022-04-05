@@ -21,8 +21,8 @@ enum lidar_setting_index {
 
 static struct ztacx_variable lidar_settings[] = {
 	{"lidar_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=60}},
-	{"lidar_distance_threshold_mm", ZTACX_VALUE_UINT16,{.val_int64 = 2000}},
-	{"lidar_distance_change_threshold_mm", ZTACX_VALUE_UINT16,{.val_int64 = 250}},
+	{"lidar_distance_threshold_mm", ZTACX_VALUE_UINT16,{.val_uint16 = 2000}},
+	{"lidar_distance_change_threshold_mm", ZTACX_VALUE_UINT16,{.val_uint16 = 250}},
 };
 
 enum lidar_value_index {
@@ -109,7 +109,7 @@ void lidar_read(struct k_work *work)
 	printf("LIDAR distance is %dmm\n", (int)distance_mm);
 
 	uint16_t lidar_distance;
-	ztacx_variable_get(&(lidar_values[VALUE_DISTANCE_MM]), &lidar_distance, sizeof(lidar_distance));
+	ztacx_variable_get_value(&(lidar_values[VALUE_DISTANCE_MM]), &lidar_distance, sizeof(lidar_distance));
 
 	int delta = abs(distance_mm - lidar_distance);
 	int delta_threshold = lidar_settings[SETTING_DISTANCE_CHANGE_THRESHOLD_MM].value.val_uint16;
@@ -162,8 +162,8 @@ int cmd_ztacx_lidar(const struct shell *shell, size_t argc, char **argv)
 	bool detect;
 	uint16_t distance;
 
-	ztacx_variable_get(&(lidar_values[VALUE_DETECT]), &detect, sizeof(detect));
-	ztacx_variable_get(&(lidar_values[VALUE_DISTANCE_MM]), &distance, sizeof(distance));
+	ztacx_variable_get_value(&(lidar_values[VALUE_DETECT]), &detect, sizeof(detect));
+	ztacx_variable_get_value(&(lidar_values[VALUE_DISTANCE_MM]), &distance, sizeof(distance));
 	shell_fprintf(shell, SHELL_NORMAL,"LIDAR distance %dmm (%s)\n",
 		      (int)distance, detect?"detect":"nodetect");
 	return 0;

@@ -3,11 +3,11 @@
 /*
  * Settings:
  *	temp_read_interval_sec ZTACX_VALUE_UINT16
- *	temp_millidegree_threshold ZTACX_VALUE_UINT16
+ *	temp_centidegree_threshold ZTACX_VALUE_UINT16
  *
  * Values:
  *      ztacx_temp_ok  ZTACX_VALUE_BOOL
- *	ztacx_temp_millidegree ZTACX_VALUE_INT64
+ *	ztacx_temp_centidegree ZTACX_VALUE_INT16
  *	ztacx_temp_notify ZTACX_VALUE_BOOL
  */
 

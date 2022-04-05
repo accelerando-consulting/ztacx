@@ -16,7 +16,7 @@
 #include <sys/mutex.h>
 
 #ifdef __main__
-LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 #else
 LOG_MODULE_DECLARE(app);
 #endif
@@ -152,6 +152,8 @@ enum ztacx_value_kind {
 	ZTACX_VALUE_BOOL,
 	ZTACX_VALUE_BYTE,
 	ZTACX_VALUE_UINT16,
+	ZTACX_VALUE_INT16,
+	ZTACX_VALUE_INT32,
 	ZTACX_VALUE_INT64,
 	ZTACX_VALUE_MAX
 };
@@ -166,6 +168,8 @@ union ztacx_value
 	bool val_bool;
 	uint8_t val_byte;
 	uint16_t val_uint16;
+	int16_t val_int16;
+	int32_t val_int32;
 	int64_t val_int64;
 };
 
@@ -186,21 +190,42 @@ int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct zta
        return -1;                                                       \
        }
 
+#define ZTACX_SETTING_FIND_AS(n,m) if (!(n=ztacx_setting_find(#m))) {	\
+       LOG_ERR("APP ABORT Setting '"#m"' not found");                   \
+       return -1;                                                       \
+       }
+
 #define ZTACX_VAR_FIND(n) if (!(n=ztacx_variable_find(#n))) {		\
        LOG_ERR("APP ABORT Variable '"#n"' not found");                  \
+       return -1;                                                       \
+       }
+#define ZTACX_VAR_FIND_AS(n,m) if (!(n=ztacx_variable_find(#m))) {	\
+       LOG_ERR("APP ABORT Variable '"#m"' not found");                  \
        return -1;                                                       \
        }
 
 //
 // functions for working with ztacx_variable items
 //
-int ztacx_variable_describe(char *buf, int buf_max, const struct ztacx_variable *s);
-int ztacx_variable_value_set(struct ztacx_variable *v, void *value);
-int ztacx_variable_set(struct ztacx_variable *v, const char *value);
-int ztacx_variable_get(const struct ztacx_variable *v, void *value_r, int value_size);
-struct ztacx_variable *ztacx_variable_find(const char *name);
-int ztacx_variables_register(struct ztacx_variable *v, int count);
-void ztacx_variables_show();
+extern int ztacx_variable_describe(char *buf, int buf_max, const struct ztacx_variable *s);
+extern struct ztacx_variable *ztacx_variable_find(const char *name);
+
+extern int ztacx_variable_get(const char *name, void *value_r, int value_size);
+extern int ztacx_variable_set(const char *name, void *value);
+
+extern int ztacx_variable_value_get(const struct ztacx_variable *v, void *value_r, int value_size);
+extern bool ztacx_variable_value_get_bool(struct ztacx_variable *v);
+extern uint16_t ztacx_variable_value_get_uint16(struct ztacx_variable *v);
+
+extern int ztacx_variable_value_set(struct ztacx_variable *v, void *value);
+extern int ztacx_variable_value_set_string(struct ztacx_variable *v, const char *value);
+extern int ztacx_variable_value_set_bool(struct ztacx_variable *v, bool value);
+extern int ztacx_variable_value_set_int16(struct ztacx_variable *v, int16_t value);
+extern int ztacx_variable_value_set_int32(struct ztacx_variable *v, int32_t value);
+extern int ztacx_variable_value_set_int64(struct ztacx_variable *v, int64_t value);
+
+extern int ztacx_variables_register(struct ztacx_variable *v, int count);
+extern void ztacx_variables_show();
 
 
 // Functions for inspecting and modifying leaves (modules)
@@ -224,9 +249,6 @@ extern int ztacx_post_sleep(void);
 
 
 #ifdef __main__
-#if CONFIG_ZTACX_LEAF_SETTINGS
-#include "ztacx_settings.h"
-#endif
 #if CONFIG_ZTACX_LEAF_BATTERY
 #include "ztacx_battery.h"
 #endif
@@ -257,6 +279,9 @@ extern int ztacx_post_sleep(void);
 #if CONFIG_ZTACX_LEAF_LORAWAN
 #include "ztacx_lorawan.h"
 #endif
+#if CONFIG_ZTACX_LEAF_LUX
+#include "ztacx_lux.h"
+#endif
 #if CONFIG_ZTACX_LEAF_POWER
 #include "ztacx_power.h"
 #endif
@@ -268,5 +293,9 @@ extern int ztacx_post_sleep(void);
 #endif
 #if CONFIG_ZTACX_LEAF_TEMP
 #include "ztacx_temp.h"
+#endif
+// settings must be last
+#if CONFIG_ZTACX_LEAF_SETTINGS
+#include "ztacx_settings.h"
 #endif
 #endif

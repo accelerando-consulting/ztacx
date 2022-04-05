@@ -1,13 +1,6 @@
 #include "ztacx.h"
 #include "ztacx_settings.h"
-#include <string.h>
 #include <settings/settings.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/bluetooth.h>
-#include <sys/mutex.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
 #include <fs/fs.h>
@@ -102,22 +95,21 @@ int ztacx_settings_runtime_load(void)
 }
 #endif
 
-int ztacx_settings_delayed_load()
+int ztacx_settings_load()
 {
-	LOG_INF("load settings (after BT)");
+	LOG_INF("load settings");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		LOG_DBG("load flash settings");
 		settings_load();
 	}
 
-#if 0 // CONFIG_SETTINGS_RUNTIME
-	LOG_DBG("load runtime settings");
-	settings_runtime_load();
+#if CONFIG_SETTINGS_RUNTIME
+	LOG_INF("load runtime settings (spragged)");
+	//settings_runtime_load();
 #endif
 
-	LOG_INF("Initial settings:");
-
+	LOG_INF("Settings ready:");
 	sys_slist_t *list = &ztacx_settings;
 	struct ztacx_variable *s;
 	char desc[132];
@@ -126,7 +118,6 @@ int ztacx_settings_delayed_load()
 		ztacx_variable_describe(desc,sizeof(desc), s);
 		LOG_INF("   %s", log_strdup(desc));
 	}
-
 	return 0;
 }
 
@@ -161,7 +152,7 @@ int ztacx_settings_register(struct ztacx_variable *s, int count)
 
 static int settings_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
-	LOG_INF("name=%s len=%d\n", log_strdup(name), (int)len);
+	LOG_DBG("name=%s len=%d", log_strdup(name), (int)len);
 
 	const char *next;
 	size_t next_len;
@@ -175,16 +166,20 @@ static int settings_handle_set(const char *name, size_t len, settings_read_cb re
 			switch (s->kind) {
 			case ZTACX_VALUE_STRING:
 				if (s->value.val_string==NULL) {
-					s->value.val_string=malloc(len);
+					//LOG_INF("Allocate string space %d", len+1);
+					
+					s->value.val_string=calloc(1,len+1);
 				}
-				else if (len != (strlen(s->value.val_string)+1)) {
-					s->value.val_string = realloc(s->value.val_string, len);
+				else if (len != strlen(s->value.val_string)) {
+					//LOG_INF("Reallocate string space to fit %d", len+1);
+					s->value.val_string = realloc(s->value.val_string, len+1);
 				}
 				if (s->value.val_string==NULL) {
 					LOG_ERR("Allocation failed");
 					return -ENOMEM;
 				}
 				read_cb(cb_arg, s->value.val_string, len);
+				s->value.val_string[len]='\0';
 				break;
 			case ZTACX_VALUE_BOOL:
 				if (len != sizeof(s->value.val_bool)) {
@@ -206,6 +201,20 @@ static int settings_handle_set(const char *name, size_t len, settings_read_cb re
 					return -EINVAL;
 				}
 				read_cb(cb_arg, &s->value.val_uint16, len);
+				break;
+			case ZTACX_VALUE_INT16:
+				if (len != sizeof(s->value.val_int16)) {
+					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					return -EINVAL;
+				}
+				read_cb(cb_arg, &s->value.val_int16, len);
+				break;
+			case ZTACX_VALUE_INT32:
+				if (len != sizeof(s->value.val_int32)) {
+					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					return -EINVAL;
+				}
+				read_cb(cb_arg, &s->value.val_int32, len);
 				break;
 			case ZTACX_VALUE_INT64:
 				if (len != sizeof(s->value.val_int64)) {
@@ -256,7 +265,7 @@ static int settings_handle_export(int (*cb)(const char *name,
 	SYS_SLIST_FOR_EACH_CONTAINER(list, s, node) {
 		switch (s->kind) {
 		case ZTACX_VALUE_STRING:
-			(void)cb(s->name, s->value.val_string, strlen(s->value.val_string)+1);
+			(void)cb(s->name, s->value.val_string, strlen(s->value.val_string));
 			break;
 		case ZTACX_VALUE_BOOL:
 			(void)cb(s->name, &s->value.val_bool, sizeof(s->value.val_bool));
@@ -266,6 +275,12 @@ static int settings_handle_export(int (*cb)(const char *name,
 			break;
 		case ZTACX_VALUE_UINT16:
 			(void)cb(s->name, &s->value.val_uint16, sizeof(s->value.val_uint16));
+			break;
+		case ZTACX_VALUE_INT16:
+			(void)cb(s->name, &s->value.val_int16, sizeof(s->value.val_int16));
+			break;
+		case ZTACX_VALUE_INT32:
+			(void)cb(s->name, &s->value.val_int32, sizeof(s->value.val_int32));
 			break;
 		case ZTACX_VALUE_INT64:
 			(void)cb(s->name, &s->value.val_int64, sizeof(s->value.val_int64));
@@ -406,7 +421,6 @@ int ztacx_settings_init(struct ztacx_leaf *leaf)
 		settings_subsys_init();
 		settings_register(&settings_handler);
 	}
-	// settings will get loaded after bluetooth is ready
 
 #if CONFIG_STATS
 	int stats_err = STATS_INIT_AND_REG(app_stats, STATS_SIZE_32, "app_stats");
@@ -457,7 +471,7 @@ int ztacx_settings_start(struct ztacx_leaf *leaf)
 {
 	LOG_INF("");
 
-	ztacx_settings_delayed_load();
+	ztacx_settings_load();
 	return 0;
 }
 
@@ -499,14 +513,14 @@ int ztacx_setting_set(struct ztacx_variable *s, const char *value)
 	char key[64];
 	snprintf(key, sizeof(key), "app/%s", s->name);
 
-	err = ztacx_variable_set(s, value);
+	err = ztacx_variable_value_set_string(s, value);
 	if (err != 0) {
 		return err;
 	}
 
 	switch (s->kind) {
 	case ZTACX_VALUE_STRING:
-		err = settings_save_one(key, (const void *)s->value.val_string, strlen(s->value.val_string)+1);
+		err = settings_save_one(key, (const void *)s->value.val_string, strlen(s->value.val_string));
 		break;
 	case ZTACX_VALUE_BOOL:
 		err = settings_save_one(key, (const void *)&s->value.val_bool, sizeof(s->value.val_bool));
@@ -516,6 +530,12 @@ int ztacx_setting_set(struct ztacx_variable *s, const char *value)
 		break;
 	case ZTACX_VALUE_UINT16:
 		err = settings_save_one(key, (const void *)&s->value.val_uint16, sizeof(s->value.val_uint16));
+		break;
+	case ZTACX_VALUE_INT16:
+		err = settings_save_one(key, (const void *)&s->value.val_int16, sizeof(s->value.val_int16));
+		break;
+	case ZTACX_VALUE_INT32:
+		err = settings_save_one(key, (const void *)&s->value.val_int32, sizeof(s->value.val_int32));
 		break;
 	case ZTACX_VALUE_INT64:
 		err = settings_save_one(key, (const void *)&s->value.val_int64, sizeof(s->value.val_int64));

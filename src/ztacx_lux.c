@@ -19,7 +19,7 @@ enum lux_setting_index {
 };
 
 static struct ztacx_variable lux_settings[] = {
-	{"lux_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=10}},
+	{"lux_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=12}},
 	{"lux_change_threshold", ZTACX_VALUE_UINT16,{.val_uint16=1}},
 };
 
@@ -64,7 +64,7 @@ int ztacx_lux_init(struct ztacx_leaf *leaf)
 				}));
 #endif
 
-	LOG_INF("  LUX present at I2C %u", 0x29);
+	LOG_INF("  LUX present on I2C as %s", log_strdup(lux_dev->name));
 	lux_values[VALUE_OK].value.val_bool = true;
 	return 0;
 }
@@ -99,7 +99,7 @@ void lux_read(struct k_work *work)
 	rc = sensor_channel_get(lux_dev, SENSOR_CHAN_LIGHT, &value);
 	int val = value.val1;
 	int prev_val = lux_values[VALUE_LEVEL].value.val_uint16;
-	LOG_DBG("LUX value is %d\n", val);
+	LOG_INF("Raw LUX value is %.3f", (float)value.val1);
 
 	int delta = abs(val - prev_val);
 	int delta_threshold = lux_settings[SETTING_CHANGE_THRESHOLD].value.val_uint16;

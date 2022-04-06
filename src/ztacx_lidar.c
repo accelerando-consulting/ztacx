@@ -20,9 +20,9 @@ enum lidar_setting_index {
 };
 
 static struct ztacx_variable lidar_settings[] = {
-	{"lidar_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=60}},
-	{"lidar_distance_threshold_mm", ZTACX_VALUE_UINT16,{.val_uint16 = 2000}},
-	{"lidar_distance_change_threshold_mm", ZTACX_VALUE_UINT16,{.val_uint16 = 250}},
+	{"lidar_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=12}},
+	{"lidar_distance_threshold_mm", ZTACX_VALUE_UINT16,{.val_uint16 = 1000}},
+	{"lidar_distance_change_threshold_mm", ZTACX_VALUE_UINT16,{.val_uint16 = 50}},
 };
 
 enum lidar_value_index {
@@ -68,7 +68,7 @@ int ztacx_lidar_init(struct ztacx_leaf *leaf)
 				}));
 #endif
 
-	LOG_INF("  LIDAR present at I2C %u", 0x29);
+	LOG_INF("  LIDAR present on I2C as %s", log_strdup(lidar_dev->name));
 	lidar_values[VALUE_OK].value.val_bool = true;
 	return 0;
 }
@@ -100,16 +100,22 @@ void lidar_read(struct k_work *work)
 
 	struct sensor_value value;
 	rc = sensor_channel_get(lidar_dev, SENSOR_CHAN_PROX, &value);
-	LOG_INF("LIDAR prox is %d\n", value.val1);
+	if (rc != 0) {
+		LOG_ERR("LIDAR Prox channel get error %d", rc);
+	}
+
 
 	rc = sensor_channel_get(lidar_dev,
 				 SENSOR_CHAN_DISTANCE,
 				 &value);
+	if (rc != 0) {
+		LOG_ERR("LIDAR Distance channel get error %d", rc);
+	}
 	uint16_t distance_mm = (int)(sensor_value_to_double(&value)*1000);
-	printf("LIDAR distance is %dmm\n", (int)distance_mm);
-
+	LOG_DBG("LIDAR distance is %dmm\n", (int)distance_mm);
+	
 	uint16_t lidar_distance;
-	ztacx_variable_get_value(&(lidar_values[VALUE_DISTANCE_MM]), &lidar_distance, sizeof(lidar_distance));
+	ztacx_variable_value_get(&(lidar_values[VALUE_DISTANCE_MM]), &lidar_distance, sizeof(lidar_distance));
 
 	int delta = abs(distance_mm - lidar_distance);
 	int delta_threshold = lidar_settings[SETTING_DISTANCE_CHANGE_THRESHOLD_MM].value.val_uint16;
@@ -117,8 +123,7 @@ void lidar_read(struct k_work *work)
 	bool significant_change = !first_reading && (delta >= delta_threshold);
 	if (first_reading || significant_change) {
 
-		bool detect = lidar_distance  < lidar_settings[SETTING_DISTANCE_THRESHOLD_MM].value.val_uint16;
-		ztacx_variable_value_set(&(lidar_values[VALUE_DISTANCE_MM]), &distance_mm);
+		bool detect = distance_mm  < lidar_settings[SETTING_DISTANCE_THRESHOLD_MM].value.val_uint16;
 		LOG_INF("LIDAR distance %d mm (%s)", distance_mm, detect?"detect":"nodetect");
 		ztacx_variable_value_set(&(lidar_values[VALUE_DISTANCE_MM]), &distance_mm);
 
@@ -162,8 +167,8 @@ int cmd_ztacx_lidar(const struct shell *shell, size_t argc, char **argv)
 	bool detect;
 	uint16_t distance;
 
-	ztacx_variable_get_value(&(lidar_values[VALUE_DETECT]), &detect, sizeof(detect));
-	ztacx_variable_get_value(&(lidar_values[VALUE_DISTANCE_MM]), &distance, sizeof(distance));
+	ztacx_variable_value_get(&(lidar_values[VALUE_DETECT]), &detect, sizeof(detect));
+	ztacx_variable_value_get(&(lidar_values[VALUE_DISTANCE_MM]), &distance, sizeof(distance));
 	shell_fprintf(shell, SHELL_NORMAL,"LIDAR distance %dmm (%s)\n",
 		      (int)distance, detect?"detect":"nodetect");
 	return 0;

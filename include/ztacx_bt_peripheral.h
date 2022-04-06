@@ -42,25 +42,25 @@ extern ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr
 
 #if CONFIG_BT_GATT_DYNAMIC_DB 
 
-#define ZTACX_BT_DECLARE_CHAR(_name, _desc,...) {		\
+#define ZTACX_BT_DYNAMIC_CHAR(_name, _desc,...) {		\
 	.variable=&(_name),				\
 	.desc=(_desc),					\
 	.uuid=(struct bt_uuid *)&(char_##_name##_uuid),   \
         __VA_ARGS__                                     \
 }
-#define ZTACX_BT_SENSOR(_name, _desc, ...)  \
+#define ZTACX_BT_DYNAMIC_SENSOR(_name, _desc, ...)  \
 	ZTACX_BT_DECLARE_CHAR(_name, _desc,				\
 			      .props=(BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),\
 			      .perm=(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE), \
 			      __VA_ARGS__)
-#define ZTAX_BT_SETTING(_name, _desc, ...) ZTACX_VT_DECLARE_CHAR(\
+#define ZTACX_BT_DYNAMIC_SETTING(_name, _desc, ...) ZTACX_VT_DECLARE_CHAR(\
 		_name, _desc,\
 		.props=(BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),\
 		.perm=(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),	\
 		__VA_ARGS__)
 
 
-#else // static services only
+#endif
 
 #define ZTACX_BT_CHAR(_val, _props, _perms, _fmt, _desc) \
         BT_GATT_CHARACTERISTIC(&(char_##_val##_uuid.uuid), _props, _perms, bt_read_variable, bt_write_variable, &(_val)), \
@@ -80,7 +80,6 @@ extern ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr
 		      (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),	\
 		      _cpf, \
 		      _desc)
-#endif
 
 extern const struct bt_gatt_cpf bt_gatt_cpf_boolean;
 extern const struct bt_gatt_cpf bt_gatt_cpf_uint8;
@@ -93,6 +92,7 @@ extern const struct bt_gatt_cpf bt_gatt_cpf_millivolt;
 extern const struct bt_gatt_cpf bt_gatt_cpf_centidegree;
 extern const struct bt_gatt_cpf bt_gatt_cpf_millimetre;
 extern const struct bt_gatt_cpf bt_gatt_cpf_second;
+extern const struct bt_gatt_cpf bt_gatt_cpf_lux;
 
 extern int ztacx_bt_peripheral_init(struct ztacx_leaf *leaf);
 extern int ztacx_bt_peripheral_start(struct ztacx_leaf *leaf);

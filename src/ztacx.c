@@ -105,7 +105,7 @@ static int ztacx_init(const struct device *_unused)
 	sys_slist_init(&ztacx_leaves);
 	sys_mutex_unlock(&ztacx_registry_mutex);
 
-	LOG_DBG("ztacx_init OK");
+	LOG_INF("ztacx_init OK");
 	return 0;
 }
 

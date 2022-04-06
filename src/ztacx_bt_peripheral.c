@@ -106,6 +106,11 @@ const struct bt_gatt_cpf bt_gatt_cpf_second = {
 	.unit = 0x2703,
 };
 
+const struct bt_gatt_cpf bt_gatt_cpf_lux = {
+	.format = 6,
+	.unit = 0x2731,
+};
+
 #if CONFIG_BT_ID_MAX > 1
 static bt_addr_le_t bt_addr;
 #endif
@@ -407,7 +412,7 @@ int ztacx_bt_characteristic_register(struct bt_gatt_service *service, const stru
 				attr.user_data = (void*)&bt_gatt_cpf_string;
 				break;
 			case ZTACX_VALUE_BOOL:
-				attr.user_data = (void*)&bt_gatt_cpf_bool;
+				attr.user_data = (void*)&bt_gatt_cpf_boolean;
 				break;
 			case ZTACX_VALUE_BYTE:
 				attr.user_data = (void*)&bt_gatt_cpf_uint8;

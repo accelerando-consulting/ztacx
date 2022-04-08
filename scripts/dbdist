@@ -1,3 +1,4 @@
 if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=zephyr.signed ; else OBJECT=zephyr ; fi
-BUILD_NUMBER=`grep BUILD_NUMBER src/config.h | awk '{print $3}'`
+[ -n "$BUILD_NUMBER" ] || BUILD_NUMBER=`grep ^CONFIG_APP_BUILD_NUMBER= prj.conf | cut -d= -f2`
+[ -n "$BUILD_NUMBER" ] || BUILD_NUMBER=`grep BUILD_NUMBER src/config.h | awk '{print $3}'`
 cp -av ${BUILD_DIR}/zephyr/${OBJECT}.bin ${HOME}/Dropbox/${DISTDIR}/${PROGRAM}-build$BUILD_NUMBER.bin

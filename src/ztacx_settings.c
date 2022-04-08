@@ -76,8 +76,12 @@ int ztacx_settings_runtime_load(void)
 			     strlen(device_id_short));
 
 #if defined(CONFIG_BT_DIS_SW_REV)
-	char buf[20];
-	snprintf(buf, sizeof(buf), "%s (build %d)", CONFIG_BT_DIS_SW_REV_STR, BUILD_NUMBER);
+	char buf[32];
+#ifdef CONFIG_APP_BUILD_NUMBER
+	snprintf(buf, sizeof(buf), "%s (build %d)", CONFIG_BT_DIS_SW_REV_STR, CONFIG_APP_BUILD_NUMBER);
+#else
+	snprintf(buf, sizeof(buf), "%s", CONFIG_BT_DIS_SW_REV_STR);
+#endif
 	settings_runtime_set("bt/dis/sw", buf, strlen(buf));
 #endif
 #if defined(CONFIG_BT_DIS_FW_REV)

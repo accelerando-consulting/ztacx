@@ -1,5 +1,18 @@
+if grep ^CONFIG_APP_BUILD_NUMBER= prj.conf >/dev/null
+then
+perl -pi -e '
+     if (/^CONFIG_APP_BUILD_NUMBER=(\d+)/) {
+     	my $oldbuild=$1;
+	my $newbuild=$oldbuild+1;
+	s/^CONFIG_APP_BUILD_NUMBER=$oldbuild/CONFIG_APP_BUILD_NUMBER=$newbuild/;
+      }
+  ' prj.conf
+  grep ^CONFIG_APP_BUILD_NUMBER= prj.conf
+  exit 0
+fi  
+
 CONFIG=config.h
-for candidate in config.h src/config.h main.c src/main.c *.c src/*.c
+for candidate in config.h include/config.h src/config.h main.c src/main.c *.c src/*.c
 do
   if [ -e "$candidate" ] 
   then 

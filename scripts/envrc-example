@@ -1,13 +1,17 @@
 # Copy this file into the root of your project and name it .envrc
 #
-#export ZEPHYR_BASE=$HOME/zephyrproject-main/zephyr
 export ZEPHYR_BASE=$HOME/zephyrproject/zephyr
 export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
 THISDIR=`basename $PWD`
 PARENTDIR=`dirname $PWD`
 [ -n "$PROJECT" ] || export PROJECT=`basename $PARENTDIR`
 [ -n "$PROGRAM" ] || export PROGRAM=$THISDIR
+
+#Set ZEPHYR_HELPER to use a raspberry pi as programmer
 #[ -n "$ZEPHYR_HELPER" ] || export ZEPHYR_HELPER=piranha
+
+#Set PORT in some way to be the serial port you use (local or on the helper)
+#RTT means use Segger Real Time Transport to access console over a J-Link cable
 #[ -n "$PORT" ] || export PORT=/dev/ttyUSB0
 #[ -n "$PORT" ] || export PORT=`ls -1 /dev/ttyUSB* /dev/tty.u* | head -1`
 #[ -n "$PORT" ] || export PORT=RTT
@@ -25,9 +29,9 @@ function setboard {
 	 fi
 }
 
-#setboard accessly_core
-#setboard accessly_lock_proto
-setboard accelerando_redsoil
+setboard accelerando_hailstone
+#setboard accelerando_bungan
+#setboard accelerando_redsoil
 #setboard accelerando_barangaroo
 export ZEPHYR_SIGN=1
 export PATH=$PWD/zephyr-scripts:$PATH

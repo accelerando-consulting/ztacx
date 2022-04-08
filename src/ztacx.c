@@ -3,7 +3,6 @@
 #include <drivers/hwinfo.h>
 
 
-char post_error_history[POST_ERROR_HISTORY_LEN];
 uint8_t device_id[16]="";
 int device_id_len = 0;
 char name_setting[21] = CONFIG_ZTACX_NAME_BASE; // max length of ble string
@@ -11,12 +10,15 @@ char name_setting[21] = CONFIG_ZTACX_NAME_BASE; // max length of ble string
 char device_id_str[35]="";
 char device_id_short[7]="";
 
-sys_slist_t ztacx_classes;
-sys_slist_t ztacx_leaves;
-sys_slist_t ztacx_variables;
+static sys_slist_t ztacx_classes;
+static sys_slist_t ztacx_leaves;
+static sys_slist_t ztacx_variables;
 
 static int ztacx_init(const struct device *_unused) ;
-SYS_INIT(ztacx_init, APPLICATION, 0);
+SYS_INIT(ztacx_init, APPLICATION, ZTACX_INIT_PRIORITY);
+
+bool ztacx_init_done = false;
+
 SYS_MUTEX_DEFINE(ztacx_registry_mutex);
 SYS_MUTEX_DEFINE(ztacx_variables_mutex);
 
@@ -105,6 +107,7 @@ static int ztacx_init(const struct device *_unused)
 	sys_slist_init(&ztacx_leaves);
 	sys_mutex_unlock(&ztacx_registry_mutex);
 
+	ztacx_init_done=true;
 	LOG_INF("ztacx_init OK");
 	return 0;
 }
@@ -228,6 +231,12 @@ static void ztacx_dynamic_cmd_get(size_t idx, struct shell_static_entry *entry)
 int cmd_ztacx_status(const struct shell *shell, size_t argc, char **argv)
 {
 	LOG_DBG("");
+
+	if (!ztacx_init_done) {
+		shell_print(shell, "ztacx is not initialised");
+		return 0;
+	}
+	shell_print(shell, "ztacx is initialised");
 
 	sys_slist_t *list = &ztacx_leaves;
 	struct ztacx_leaf *leaf;

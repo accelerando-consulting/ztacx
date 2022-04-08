@@ -16,7 +16,7 @@
 #include <sys/mutex.h>
 
 #ifdef __main__
-LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 #else
 LOG_MODULE_DECLARE(app);
 #endif
@@ -37,6 +37,13 @@ extern const char *post_error_names[];
 struct ztacx_leaf;
 struct ztacx_leaf_class;
 
+#define ZTACX_INIT_PRIORITY 90
+#define ZTACX_CLASS_INIT_PRIORITY 91
+#define ZTACX_LEAF_INIT_PRIORITY 92
+#define ZTACX_APP_INIT_PRIORITY 94
+#define ZTACX_LEAF_START_PRIORITY 96
+#define ZTACX_APP_START_PRIORITY 98
+
 /** @brief Ztacx leaf class callbacks
  *
  * This structure defines the lifecycle functions for each instance (leaf) of a leaf class.
@@ -44,8 +51,8 @@ struct ztacx_leaf_class;
  *
  * Only the 'setup' and 'start' functions are mandatory.
  *
- * The leaf setup function is triggered by SYS_INIT level APPLICATION, priority 50
- * The leaf start function is triggered by SYS_INIT level APPLICATION, priority 75 (after all leaves are setup)
+ * The leaf setup function is triggered by SYS_INIT level APPLICATION, priority ZTACX_LEAF_INIT_PRIORITY
+ * The leaf start function is triggered by SYS_INIT level APPLICATION, priority ZTACX_LEAF_START_PRIORITY (after all leaves are setup)
  *
  */
 struct ztacx_leaf_cb
@@ -97,11 +104,11 @@ struct ztacx_leaf
 #define ZTACX_CLASS_DEFINE(class_name,class_cb) \
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = ((struct ztacx_leaf_cb)(class_cb)); \
 	struct ztacx_leaf_class ztacx_class_ ## class_name = {.name=#class_name,.super=NULL,.cb=&ztacx_class_cb_ ## class_name}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, 25)
+	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY)
 #define ZTACX_SUBCLASS_DEFINE(class_name, super_name , class_cb)				\
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = class_cb;	\
 	struct ztacx_leaf_class ztacx_class_ ## class_name = (struct ztacx_leaf_cb){.name=#class_name,.super=&ztacx_class_ ## super_name,.cb=&ztacx_class_cb_ ## class_name}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, 25);
+	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY);
 #define ZTACX_CLASS_AUTO_DEFINE(class_name) \
 	extern int ztacx_##class_name##_init(struct ztacx_leaf *leaf);	\
 	extern int ztacx_##class_name##_start(struct ztacx_leaf *leaf);	\
@@ -137,8 +144,8 @@ struct ztacx_leaf
 #ifdef __main__
 #define ZTACX_LEAF_DEFINE(class_name, leaf_name, context_ptr) \
 	struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name = {.name=#leaf_name,.class=&(ztacx_class_##class_name), .context=(void*)(context_ptr)}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_init_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_init, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, 50); \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_start_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_start, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, 75);
+	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_init_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_init, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_INIT_PRIORITY); \
+	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_start_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_start, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY);
 #else
 #define ZTACX_LEAF_DEFINE(class_name, leaf_name, context_ptr) extern struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name
 #endif

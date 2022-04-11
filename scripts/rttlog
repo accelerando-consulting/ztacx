@@ -4,11 +4,12 @@ then
   do
      if pgrep JLinkRTTLogger  >/dev/null
      then  
+ 	clear
 	nc localhost 19021 
      else 
  	clear 
-	echo "wait for RTT..." 
-	 sleep 5 
+	echo "`date +%T` wait for RTT..." 
+        sleep 1 
      fi 
   done	
 else

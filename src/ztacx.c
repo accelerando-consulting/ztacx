@@ -2,7 +2,6 @@
 #include <bluetooth/bluetooth.h>
 #include <drivers/hwinfo.h>
 
-
 uint8_t device_id[16]="";
 int device_id_len = 0;
 char name_setting[21] = CONFIG_ZTACX_NAME_BASE; // max length of ble string
@@ -61,7 +60,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(init, NULL,"Initialise a leaf.", cmd_ztacx_init),
 	SHELL_CMD(stop, NULL,"Stop a leaf.", cmd_ztacx_stop),
 	SHELL_CMD(start, NULL,"Start a leaf.", cmd_ztacx_start),
+#if CONFIG_ZTACX_LEAF_SETTINGS
 	SHELL_CMD(setting, NULL,"Show/edit persistent settings.", cmd_ztacx_settings),
+#endif
 	SHELL_CMD(value, NULL,"Show/edit status of runtime variables.", cmd_ztacx_value),
 	SHELL_SUBCMD_SET_END
 	);
@@ -370,7 +371,24 @@ void ztacx_variables_show()
 	}
 }
 
+struct ztacx_variable *ztacx_variables_dup(const struct ztacx_variable *v, int count, const char *prefix) 
+{
+	int size = count * sizeof(struct ztacx_variable);
+	struct ztacx_variable *result = malloc(size);
+	if (!result) return NULL;
 
+	memcpy(result, v, size);
+
+	if (prefix) {
+		// prepend supplied prefix to each variable name
+		for (int i=0; i<count; i++) {
+			snprintf(result[i].name, CONFIG_ZTACX_VALUE_NAME_MAX,
+				 "%s_%s", prefix, v[i].name);
+		}
+	}
+	
+	return result;
+}
 
 struct ztacx_leaf *ztacx_leaf_get(const char *name)
 {
@@ -379,6 +397,23 @@ struct ztacx_leaf *ztacx_leaf_get(const char *name)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, leaf, node) {
 		if (strcmp(leaf->name, name)==0) {
+			return leaf;
+		}
+	}
+	return NULL;
+}
+
+struct ztacx_leaf *ztacx_leaf_find(const char *class, void *compare, ztacx_leaf_find_cb_t cb)
+{
+	sys_slist_t *list = &ztacx_leaves;
+	struct ztacx_leaf *leaf;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(list, leaf, node) {
+		if (class && (strcmp(leaf->class->name, class) != 0)) {
+			// does not match the class filter
+			continue;
+		}
+		if (cb(leaf, compare) == 0) {
 			return leaf;
 		}
 	}
@@ -652,6 +687,15 @@ int ztacx_variable_value_set_int64(struct ztacx_variable *v, int64_t value)
 bool ztacx_variable_value_get_bool(struct ztacx_variable *v)
 {
 	bool value = false;
+	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
+		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
+	}
+	return value;
+}
+
+uint8_t ztacx_variable_value_get_byte(struct ztacx_variable *v)
+{
+	uint8_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
 		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
 	}

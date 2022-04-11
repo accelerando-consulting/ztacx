@@ -27,13 +27,6 @@ extern char device_id_str[35];
 extern char device_id_short[7];
 extern char name_setting[21];
 
-#ifndef POST_ERROR_HISTORY_LEN
-#define POST_ERROR_HISTORY_LEN 5
-#endif
-
-extern char post_error_history[POST_ERROR_HISTORY_LEN];
-extern const char *post_error_names[];
-
 struct ztacx_leaf;
 struct ztacx_leaf_class;
 
@@ -220,8 +213,10 @@ extern struct ztacx_variable *ztacx_variable_find(const char *name);
 extern int ztacx_variable_get(const char *name, void *value_r, int value_size);
 extern int ztacx_variable_set(const char *name, void *value);
 
+extern struct ztacx_variable *ztacx_variables_dup(const struct ztacx_variable *v, int count, const char *prefix);
 extern int ztacx_variable_value_get(const struct ztacx_variable *v, void *value_r, int value_size);
 extern bool ztacx_variable_value_get_bool(struct ztacx_variable *v);
+extern uint8_t ztacx_variable_value_get_byte(struct ztacx_variable *v);
 extern uint16_t ztacx_variable_value_get_uint16(struct ztacx_variable *v);
 
 extern int ztacx_variable_value_set(struct ztacx_variable *v, void *value);
@@ -237,7 +232,10 @@ extern void ztacx_variables_show();
 
 // Functions for inspecting and modifying leaves (modules)
 //
+typedef int (*ztacx_leaf_find_cb_t)(const struct ztacx_leaf *leaf, void *compare);
+
 extern struct ztacx_leaf *ztacx_leaf_get(const char *name);
+extern struct ztacx_leaf *ztacx_leaf_find(const char *class, void *compare, ztacx_leaf_find_cb_t cb);
 extern int ztacx_leaf_start(const char *name);
 extern int ztacx_leaf_stop(const char *name);
 extern bool ztacx_leaf_is_ready(const char *name);

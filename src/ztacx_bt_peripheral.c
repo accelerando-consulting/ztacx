@@ -14,17 +14,17 @@
 #include <mgmt/mcumgr/smp_bt.h>
 #endif
 
+#if CONFIG_BT_DEVICE_NAME_DYNAMIC || CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 enum bt_peripheral_setting_index {
 	SETTING_DEVICE_NAME = 0,
-	SETTING_SERVICE_ID,
 	SETTING_TX_POWER,
 };
 
 static struct ztacx_variable bt_peripheral_settings[] = {
 	{"peripheral_name", ZTACX_VALUE_STRING},
-	{"peripheral_service_id", ZTACX_VALUE_STRING},
 	{"peripheral_tx_power", ZTACX_VALUE_UINT16,{.val_uint16 = 0}},
 };
+#endif
 
 enum peripheral_value_index {
 	VALUE_OK = 0,
@@ -677,7 +677,10 @@ int ztacx_bt_peripheral_init(struct ztacx_leaf *leaf)
 
 	k_work_init(&advertise_work, advertise);
 
+#if CONFIG_ZTACX_LEAF_SETTINGS && (CONFIG_BT_DEVICE_NAME_DYNAMIC || CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+
 	ztacx_settings_register(bt_peripheral_settings, ARRAY_SIZE(bt_peripheral_settings));
+#endif
 	ztacx_variables_register(bt_peripheral_values, ARRAY_SIZE(bt_peripheral_values));
 
 	bt_conn_cb_register(&conn_callbacks);

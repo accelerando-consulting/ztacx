@@ -2,17 +2,17 @@
 
 struct ztacx_led_context
 {
-	int cycle;
-	int duty;
-	uint16_t blink_value;
+	struct gpio_dt_spec *gpio;
+	struct ztacx_variable *settings;
+	struct ztacx_variable *values;
 	struct k_work_delayable ledoff;
 	struct k_work_delayable ledon;
 };
-extern struct ztacx_led_context led_leaf_context;
+extern struct ztacx_led_context led0_leaf_context;
 
 ZTACX_CLASS_AUTO_DEFINE(led);
 
-ZTACX_LEAF_DEFINE(led, led, &led_leaf_context);
+ZTACX_LEAF_DEFINE(led, led0, NULL);
 
 #if CONFIG_SHELL
 extern int cmd_test_led(const struct shell *shell, size_t argc, char **argv);

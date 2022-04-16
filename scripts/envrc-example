@@ -1,7 +1,6 @@
 # Copy this file into the root of your project and name it .envrc
 #
 export ZEPHYR_BASE=$HOME/zephyrproject/zephyr
-export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
 THISDIR=`basename $PWD`
 PARENTDIR=`dirname $PWD`
 [ -n "$PROJECT" ] || export PROJECT=`basename $PARENTDIR`

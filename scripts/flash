@@ -1,3 +1,4 @@
+#!/bin/bash
 if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=zephyr.signed ; else OBJECT=zephyr ; fi
 if [ -z "$ZEPHYR_HELPER" ]
 then

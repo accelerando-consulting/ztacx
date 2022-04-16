@@ -14,9 +14,10 @@ then
     time west flash -d ${BUILD_DIR} --runner ${RUNNER} --hex-file ${BUILD_DIR}/zephyr/${OBJECT}.hex
   fi
 else
+  [ -n "$OPENOCD" ] || OPENOCD=openocd
   rsync -Pv ${BUILD_DIR}/zephyr/${OBJECT}.hex ${ZEPHYR_HELPER}:tmp/${PROGRAM}.hex  
   rsync -Pv ${BUILD_DIR}/zephyr/${OBJECT}.bin ${ZEPHYR_HELPER}:tmp/${PROGRAM}.bin
-  ssh -t ${ZEPHYR_HELPER} time sudo openocd -c \"adapter usb location ${USBLOC}\" \
+  ssh -t ${ZEPHYR_HELPER} time sudo ${OPENOCD} -c \"adapter usb location ${USBLOC}\" \
     -c \"adapter driver jlink\" \
     -c \"transport select swd\" \
     -f target/nrf52.cfg \

@@ -1,1 +1,1 @@
-west build -d ${BUILD_DIR}
+west build -p auto -b ${BOARD} -d ${BUILD_DIR}

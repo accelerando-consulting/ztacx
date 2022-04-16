@@ -61,7 +61,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(init, NULL,"Initialise a leaf.", cmd_ztacx_init),
 	SHELL_CMD(stop, NULL,"Stop a leaf.", cmd_ztacx_stop),
 	SHELL_CMD(start, NULL,"Start a leaf.", cmd_ztacx_start),
+#if CONFIG_ZTACX_LEAF_SETTINGS
 	SHELL_CMD(setting, NULL,"Show/edit persistent settings.", cmd_ztacx_settings),
+#endif
 	SHELL_CMD(value, NULL,"Show/edit status of runtime variables.", cmd_ztacx_value),
 	SHELL_SUBCMD_SET_END
 	);

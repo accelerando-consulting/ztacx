@@ -17,20 +17,7 @@ PARENTDIR=`dirname $PWD`
 [ -n "$DISTHOST" ] || export DISTHOST=firmware
 [ -n "$DISTDIR" ] || export DISTDIR=firmware/`basename $(dirname $PWD)`
 
-function setboard {
-	 export BOARD="$1";
-	 export BUILD_DIR=$PWD/build/${BOARD}
-	 if [ -d boards/*/${BOARD} ]
-	 then
-		export BOARD_ROOT=$PWD
-	 else
-		export BOARD_ROOT=$ZEPHYR_BASE
-	 fi
-}
-
-setboard accelerando_hailstone
-#setboard accelerando_bungan
-#setboard accelerando_redsoil
-#setboard accelerando_barangaroo
-export ZEPHYR_SIGN=1
 export PATH=$PWD/zephyr-scripts:$PATH
+export ZEPHYR_SIGN=1
+
+. setboard accelerando_hailstone

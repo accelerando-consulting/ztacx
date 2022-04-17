@@ -5,7 +5,7 @@ then
      if pgrep JLinkRTTLogger  >/dev/null
      then  
  	clear
-	nc localhost 19021 
+	nc -q1 localhost 19021 
      else 
  	clear 
 	echo "`date +%T` wait for RTT..." 

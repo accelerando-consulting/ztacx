@@ -1,7 +1,7 @@
 #!/bin/echo "You need to source this script not run it"
 TOP=`git rev-parse --show-toplevel`
 export BOARD="$1";
-export BUILD_DIR=$PWD/build/${BOARD}
+export BUILD_DIR=$PWD/.build/${BOARD}
 if [ -d $TOP/boards ] && find $TOP/boards -maxdepth 2 -type d | grep ${BOARD} >/dev/null
 then
   export BOARD_ROOT=$TOP

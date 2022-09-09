@@ -12,7 +12,7 @@ extern struct ztacx_led_context led0_leaf_context;
 
 ZTACX_CLASS_AUTO_DEFINE(led);
 
-ZTACX_LEAF_DEFINE(led, led0, NULL);
+ZTACX_LEAF_DEFINE(led, led0, &led0_leaf_context);
 
 #if CONFIG_SHELL
 extern int cmd_test_led(const struct shell *shell, size_t argc, char **argv);

@@ -4,16 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <init.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
-#include <sys/mutex.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/mutex.h>
 
 #ifdef __main__
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
@@ -97,11 +97,13 @@ struct ztacx_leaf
 #define ZTACX_CLASS_DEFINE(class_name,class_cb) \
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = ((struct ztacx_leaf_cb)(class_cb)); \
 	struct ztacx_leaf_class ztacx_class_ ## class_name = {.name=#class_name,.super=NULL,.cb=&ztacx_class_cb_ ## class_name}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY)
+	int ztacx_class_init_ ## class_name (const struct device *notused) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
+	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
 #define ZTACX_SUBCLASS_DEFINE(class_name, super_name , class_cb)				\
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = class_cb;	\
 	struct ztacx_leaf_class ztacx_class_ ## class_name = (struct ztacx_leaf_cb){.name=#class_name,.super=&ztacx_class_ ## super_name,.cb=&ztacx_class_cb_ ## class_name}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY);
+	int ztacx_class_init_ ## class_name (const struct device *notused) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
+	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
 #define ZTACX_CLASS_AUTO_DEFINE(class_name) \
 	extern int ztacx_##class_name##_init(struct ztacx_leaf *leaf);	\
 	extern int ztacx_##class_name##_start(struct ztacx_leaf *leaf);	\
@@ -137,10 +139,18 @@ struct ztacx_leaf
 #ifdef __main__
 #define ZTACX_LEAF_DEFINE(class_name, leaf_name, context_ptr) \
 	struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name = {.name=#leaf_name,.class=&(ztacx_class_##class_name), .context=(void*)(context_ptr)}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_init_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_init, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_INIT_PRIORITY); \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_start_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_start, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY);
+	int ztacx_leaf_init_##class_name##_##leaf_name(const struct device *notused) {return ztacx_leaf_sys_init(&ztacx_leaf_##class_name##_##leaf_name);} \
+	SYS_INIT(ztacx_leaf_init_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_INIT_PRIORITY); \
+	int ztacx_leaf_start_##class_name##_##leaf_name(const struct device *notused) {return ztacx_leaf_sys_start(&ztacx_leaf_##class_name##_##leaf_name);} \
+	SYS_INIT(ztacx_leaf_start_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY); 
+#define ZTACX_LEAF_DEFINE_NOCONTEXT(class_name, leaf_name) ZTACX_LEAF_DEFINE(class_name, leaf_name, NULL)
+#define ZTACX_LEAF_DEFINE_AUTOCONTEXT(class_name, leaf_name) \
+	struct ztacx_##class_name##_context ztacx_##class_name##_##leaf_name##_context;	\
+	ZTACX_LEAF_DEFINE(class_name, leaf_name, &ztacx_##class_name##_##leaf_name##_context)
 #else
 #define ZTACX_LEAF_DEFINE(class_name, leaf_name, context_ptr) extern struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name
+#define ZTACX_LEAF_DEFINE_NOCONTEXT(class_name, leaf_name) extern struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name
+#define ZTACX_LEAF_DEFINE_AUTOCONTEXT(class_name, leaf_name) extern struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name
 #endif
 
 /**

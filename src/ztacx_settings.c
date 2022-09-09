@@ -242,7 +242,7 @@ static int settings_handle_set(const char *name, size_t len, settings_read_cb re
 		}
 	}
 
-	LOG_WRN("Unhandled setting %s", log_strdup(name));
+	//NOCOMMIT LOG_WRN("Unhandled setting %s", log_strdup(name));
 
 	next_len = settings_name_next(name, &next);
 

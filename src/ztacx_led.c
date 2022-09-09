@@ -27,8 +27,6 @@ static struct ztacx_variable led_default_values[] = {
 	{"lit", ZTACX_VALUE_BOOL}
 };
 
-struct ztacx_led_context led0_leaf_context;
-
 #if CONFIG_SHELL
 static int cmd_ztacx_led(const struct shell *shell, size_t argc, char **argv);
 #endif
@@ -36,8 +34,13 @@ static int cmd_ztacx_led(const struct shell *shell, size_t argc, char **argv);
 static void turn_led_on(struct k_work *work);
 static void turn_led_off(struct k_work *work);
 
-static struct gpio_dt_spec default_led =
-	GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
+static struct gpio_dt_spec default_led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+
+struct ztacx_led_context led0_leaf_context = {
+	.gpio=&default_led,
+	.settings = led_default_settings,
+	.values = led_default_values
+};
 
 #define CTX_SETTING(_s) &context->settings[SETTING_##_s]
 #define CTX_VALUE(_s) &context->values[VALUE_##_s]
@@ -48,19 +51,30 @@ int ztacx_led_init(struct ztacx_leaf *leaf)
 	struct ztacx_led_context *context = leaf->context;
 
 	if (!context) {
+		LOG_INF("Allocating new context structure");
 		context = calloc(1, sizeof(struct ztacx_led_context));
-		if (!context) return -ENOMEM;
+		if (!context) {
+			LOG_ERR("ENOMEM");
+			return -ENOMEM;
+		}
 		leaf->context = context;
 		context->gpio = &default_led;
 
 		int settings_size = ARRAY_SIZE(led_default_settings) * sizeof(struct ztacx_variable);
 		int values_size = ARRAY_SIZE(led_default_values) * sizeof(struct ztacx_variable);
 		context->settings = ztacx_variables_dup(led_default_settings, settings_size, leaf->name);
-		if (!context->settings) return -ENOMEM;
+		if (!context->settings) {
+			LOG_ERR("ENOMEM");
+			return -ENOMEM;
+		}
 		context->values = ztacx_variables_dup(led_default_values, values_size, leaf->name);
-		if (!context->values) return -ENOMEM;
+		if (!context->values) {
+			LOG_ERR("ENOMEM");
+			return -ENOMEM;
+		}
 	}
 	if (!context->gpio) {
+		LOG_ERR("No gpio device");
 		return -ENODEV;
 	}
 	

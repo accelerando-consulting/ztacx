@@ -86,6 +86,7 @@ config ZTACX_LEAF_PWMLED
 config ZTACX_LEAF_SETTINGS
        bool "Enable Ztacx leaf for peristent settings"
        default n
+       select SETTINGS
        
 
 config ZTACX_LEAF_LORAWAN

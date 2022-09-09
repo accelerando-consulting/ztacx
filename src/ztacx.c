@@ -116,7 +116,7 @@ static int ztacx_init(const struct device *_unused)
 
 int ztacx_class_register(struct ztacx_leaf_class *class)
 {
-	LOG_DBG("ztacx_class_register %s", log_strdup(class->name));
+	LOG_INF("ztacx_class_register %s", log_strdup(class->name));
 	while (sys_mutex_lock(&ztacx_registry_mutex, K_MSEC(100)) != 0) {
 		LOG_WRN("ztacx registry mutex is held too long");
 	}

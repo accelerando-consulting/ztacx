@@ -285,6 +285,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 int ztacx_bt_adv_register(const struct bt_data *adv_data, int adv_len, const struct bt_data *scanresp, int sr_len) 
 {
+	LOG_INF("bt_adv_register");
 	stop_advertise();
 
 	bt_adv_data = adv_data;
@@ -292,11 +293,14 @@ int ztacx_bt_adv_register(const struct bt_data *adv_data, int adv_len, const str
 	bt_scanresp = scanresp;
 	bt_scanresp_size = sr_len;
 	
-	
 	if (ztacx_variable_value_get_bool(&bt_peripheral_values[VALUE_OK]) && bt_adv_data && bt_adv_data_size) {
 		LOG_INF("Registering advertising data with bluetooth subsystem");
 		k_work_submit(&advertise_work);
 	}
+	else {
+		LOG_WRN("Bluetooth is not ready");
+	}
+		
 	return 0;
 }
 
@@ -304,6 +308,7 @@ int ztacx_bt_adv_register(const struct bt_data *adv_data, int adv_len, const str
 #if CONFIG_BT_GATT_DYNAMIC_DB
 int ztacx_bt_service_register(const struct bt_gatt_attr *attrs, int count, struct bt_gatt_service **service_r) 
 {
+	LOG_INF("bt_service_register");
 	struct bt_gatt_service *service;
 	
 	if (!service_r) {
@@ -646,8 +651,8 @@ static void bt_ready(int err)
 
 int create_bt_addr_for_device()
 {
-	LOG_DBG("Generating fixed bluetooth address");
 #if CONFIG_BT_ID_MAX > 1
+	LOG_INF("Generating fixed bluetooth address");
 	int err;
 
 	// use a fixed BT addr
@@ -673,7 +678,7 @@ int ztacx_bt_peripheral_init(struct ztacx_leaf *leaf)
 {
 	//int8_t txp_get = 0xFF;
 
-	LOG_INF("Initialising Bluetooth Peripheral");
+	LOG_INF("ztacx_bt_peripheral_init");
 
 	k_work_init(&advertise_work, advertise);
 
@@ -702,7 +707,7 @@ int ztacx_bt_peripheral_init(struct ztacx_leaf *leaf)
 
 int ztacx_bt_peripheral_start(struct ztacx_leaf *leaf)
 {
-	LOG_INF("");
+	LOG_INF("ztacx_bt_peripheral_start");
 	
 	create_bt_addr_for_device();
 

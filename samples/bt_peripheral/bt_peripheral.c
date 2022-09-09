@@ -48,6 +48,7 @@ BT_GATT_SERVICE_DEFINE(
 
 static int app_init(const struct device *unused) 
 {
+	printk("app_init\n");
 	LOG_INF("NOTICE Initialising app variables");
 	ZTACX_SETTING_FIND_AS(led_duty, led0_duty);
 	ZTACX_SETTING_FIND_AS(led_cycle, led0_cycle);
@@ -59,11 +60,11 @@ static int app_init(const struct device *unused)
 	}
 	return 0;
 }
-SYS_INIT(app_init, APPLICATION, ZTACX_PRIORITY_APP_INIT);
+SYS_INIT(app_init, APPLICATION, ZTACX_APP_INIT_PRIORITY);
+
 
 void main(void)
 {
-
 	printk("Ztacx Bluetooth peripheral sample\n");
 	printk("Use nrfConnect mobile app to browse your device\n");
 }

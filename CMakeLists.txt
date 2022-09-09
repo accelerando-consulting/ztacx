@@ -11,6 +11,7 @@ target_sources_ifdef(CONFIG_ZTACX_LEAF_I2C           app PRIVATE src/ztacx_i2c.c
 target_sources_ifdef(CONFIG_ZTACX_LEAF_LED           app PRIVATE src/ztacx_led.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_LIDAR         app PRIVATE src/ztacx_lidar.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_LORAWAN       app PRIVATE src/ztacx_lorawan.c)
+target_sources_ifdef(CONFIG_ZTACX_LEAF_LORA_MODEM    app PRIVATE src/ztacx_lora_modem.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_LUX           app PRIVATE src/ztacx_lux.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_POWER         app PRIVATE src/ztacx_power.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_PWMLED        app PRIVATE src/ztacx_pwmled.c)

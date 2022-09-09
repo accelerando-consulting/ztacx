@@ -52,8 +52,11 @@ int ztacx_lidar_init(struct ztacx_leaf *leaf)
 	ztacx_settings_register(lidar_settings, ARRAY_SIZE(lidar_settings));
 	ztacx_variables_register(lidar_values, ARRAY_SIZE(lidar_values));
 
+#if CONFIG_VL53L0X
 	lidar_dev = device_get_binding(DT_LABEL(DT_INST(0, st_vl53l0x)));
-
+#elif CONFIG_VL53L1X
+	lidar_dev = device_get_binding(DT_LABEL(DT_INST(0, st_vl53l1x)));
+#endif
 	if (!lidar_dev) {
 		LOG_ERR("  LIDAR device not present");
 		lidar_values[VALUE_OK].value.val_bool = false;

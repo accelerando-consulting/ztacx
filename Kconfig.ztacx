@@ -93,6 +93,19 @@ config ZTACX_LEAF_LORAWAN
        default n
        select ZTACX_LEAF_SETTINGS
 
+config ZTACX_LEAF_LORA_MODEM
+       bool "Enable Ztacx leaf for eByte LoRaWAN MODEM"
+       default n
+       select MODEM_RECEIVER
+       select MODEM_SHELL
+       select MODEM_CMD_HANDLER
+       select MODEM_IFACE_UART_INTERRUPT
+
+config ZTACX_LORA_MODEM_UART
+       string "Name of LoRa MODEM UART device"
+       default "UART-1"
+       depends on ZTACX_LEAF_LORA_MODEM
+
 config ZTACX_LEAF_SPKR
        bool "Enable Ztacx leaf for simple speaker"
        default n

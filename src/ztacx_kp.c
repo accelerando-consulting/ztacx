@@ -236,7 +236,7 @@ static void kp_scan(struct k_work *work)
 	}
 	else {
 		if (kp_new != kp_was) {
-			LOG_INF("Keypad change %02x => %02x", (int)kp_was, (int)kp_new);
+			LOG_DBG("Keypad change %02x => %02x", (int)kp_was, (int)kp_new);
 			for (int bit=0; bit<8; bit++) {
 				uint8_t was = kp_was&(1<<bit);
 				uint8_t new = kp_new&(1<<bit);
@@ -245,7 +245,7 @@ static void kp_scan(struct k_work *work)
 					LOG_INF("Button %d press", bit);
 				}
 				else {
-					LOG_INF("Button %d release", bit);
+					LOG_DBG("Button %d release", bit);
 				}
 			}
 			CTX_VALUE(PINS).value.val_byte = kp_new;

@@ -138,7 +138,6 @@ config ZTACX_LEAF_LORA_MODEM
        select MODEM_RECEIVER
        select MODEM_SHELL
        select MODEM_CMD_HANDLER
-       select MODEM_IFACE_UART_INTERRUPT
 
 config ZTACX_LORA_MODEM_UART
        string "Name of LoRa MODEM UART device"

@@ -56,7 +56,7 @@ int ztacx_lidar_init(struct ztacx_leaf *leaf)
 
 	if (!lidar_dev) {
 		LOG_ERR("  LIDAR device not present");
-		lidar_values[VALUE_OK].value.val_bool = false;
+		ztacx_variable_value_set_bool(lidar_values[VALUE_OK],false);
 		return -ENODEV;
 	}
 
@@ -69,7 +69,7 @@ int ztacx_lidar_init(struct ztacx_leaf *leaf)
 #endif
 
 	LOG_INF("  LIDAR present on I2C as %s", log_strdup(lidar_dev->name));
-	lidar_values[VALUE_OK].value.val_bool = true;
+	ztacx_variable_value_set_bool(lidar_values[VALUE_OK],true);
 	return 0;
 }
 

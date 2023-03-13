@@ -1,0 +1,13 @@
+&i2c1 {
+	status = "okay";
+
+        adxl345@53 {
+                compatible = "adi,adxl345";
+                reg = <0x53>;
+                label = "IMS";
+        };
+};
+
+&spi1 {
+	status = "disabled";
+};

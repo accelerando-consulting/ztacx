@@ -14,6 +14,8 @@ static struct ztacx_variable *led_cycle;
 static struct ztacx_variable *led_blink;
 static struct ztacx_variable *led_lit;
 
+#if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
+
 #define SERVICE_ID 0xed,0x34,0xe5,0xd4,0xb6,0xbf,0x11,0xec,0xb8,0x19,0xd7,0x85,0xeb,0xdd,0x2f,0x40
 static struct bt_uuid_128 service_uuid = BT_UUID_INIT_128(SERVICE_ID);
 
@@ -46,18 +48,25 @@ BT_GATT_SERVICE_DEFINE(
 	ZTACX_BT_SENSOR(led_lit,    boolean,     "True if LED is lit"),
 	);
 
+#endif
+
 static int app_init(const struct device *unused) 
 {
-	printk("app_init\n");
-	LOG_INF("NOTICE Initialising app variables");
-	ZTACX_SETTING_FIND_AS(led_duty, led0_duty);
-	ZTACX_SETTING_FIND_AS(led_cycle, led0_cycle);
-	ZTACX_VAR_FIND_AS(led_blink, led0_blink);
-	ZTACX_VAR_FIND_AS(led_lit, led0_lit);
+	printk("bt_peripheral sample app_init\n");
+	LOG_INF("NOTICE bt_peripheral sample Initialising app variables");
+	//ZTACX_SETTING_FIND_AS(led_duty, led0_duty);
+	//ZTACX_SETTING_FIND_AS(led_cycle, led0_cycle);
+	//ZTACX_VAR_FIND_AS(led_blink, led0_blink);
+	//ZTACX_VAR_FIND_AS(led_lit, led0_lit);
 
+#if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
+	LOG_INF("Registering adversiging data");
 	if (ztacx_bt_adv_register(bt_adv_data, ARRAY_SIZE(bt_adv_data), NULL, 0) != 0) {
 		LOG_ERR("Bluetooth advertising register failed");
 	}
+#else
+	LOG_ERR("BT peripheral leaf is disabled");
+#endif
 	return 0;
 }
 SYS_INIT(app_init, APPLICATION, ZTACX_APP_INIT_PRIORITY);

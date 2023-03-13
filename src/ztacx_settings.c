@@ -104,7 +104,7 @@ int ztacx_settings_load()
 	LOG_INF("load settings");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		LOG_DBG("load flash settings");
+		LOG_INF("load flash settings");
 		settings_load();
 	}
 
@@ -151,12 +151,13 @@ int ztacx_settings_add(const char *name,
 
 int ztacx_settings_register(struct ztacx_variable *s, int count)
 {
+	LOG_INF("%d", count);
 	return ztacx_values_register(&ztacx_settings, &ztacx_settings_mutex, s, count);
 }
 
 static int settings_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
-	LOG_DBG("name=%s len=%d", log_strdup(name), (int)len);
+	LOG_INF("name=%s len=%d", log_strdup(name), (int)len);
 
 	const char *next;
 	size_t next_len;
@@ -242,7 +243,7 @@ static int settings_handle_set(const char *name, size_t len, settings_read_cb re
 		}
 	}
 
-	LOG_WRN("Unhandled setting %s", log_strdup(name));
+	//NOCOMMIT LOG_WRN("Unhandled setting %s", log_strdup(name));
 
 	next_len = settings_name_next(name, &next);
 
@@ -334,24 +335,26 @@ static int _print_setting(const char *key, size_t len, settings_read_cb read_cb,
  */
 int cmd_ztacx_settings(const struct shell *shell, size_t argc, char **argv)
 {
-	LOG_DBG("");
+	LOG_INF("cmd_ztacx_settings argc=%d argv[1]=%s", argc, (argc>1)?log_strdup(argv[1]):"");
 
 	if (argc <= 1) {
+		LOG_INF("settings load");
 		settings_load();
 		return 0;
 	}
-	LOG_INF("app_settings argc=%d argv[1]=%s", argc, log_strdup(argv[1]));
 	if (strcmp(argv[1], "init")==0) {
-		LOG_INF("init");
+		LOG_INF("settings init");
 		ztacx_settings_init(ztacx_leaf_get("settings"));
 	}
 	else if ((argc >= 2) && (strcmp(argv[1], "show")==0)) {
+		LOG_INF("settings show");
 		sys_slist_t *list = &ztacx_settings;
 		struct ztacx_variable *s;
 		char desc[132];
 
 		SYS_SLIST_FOR_EACH_CONTAINER(list, s, node) {
 			ztacx_variable_describe(desc,sizeof(desc), s);
+			LOG_INF("setting desc %s", desc);
 			shell_print(shell, "%s", desc);
 		}
 	}
@@ -419,7 +422,7 @@ int cmd_ztacx_settings(const struct shell *shell, size_t argc, char **argv)
 
 int ztacx_settings_init(struct ztacx_leaf *leaf)
 {
-	LOG_DBG("");
+	LOG_INF("");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_subsys_init();
@@ -467,7 +470,7 @@ int ztacx_settings_init(struct ztacx_leaf *leaf)
 #endif
 
 
-	LOG_DBG("done");
+	LOG_INF("done");
 	return 0;
 }
 

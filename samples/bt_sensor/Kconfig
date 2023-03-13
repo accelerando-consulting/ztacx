@@ -1,0 +1,13 @@
+mainmenu "Example"
+
+config APP_SHOCK_INTERVAL_SEC
+       int "Interval at which to update the shock alarm (seconds)"
+       default 5
+
+config APP_SHOCK_THRESHOLD
+       int "Threshold for shock alert (cm/s/s)"
+       default 2000
+
+rsource "../../Kconfig.ztacx"
+source "Kconfig.zephyr"
+

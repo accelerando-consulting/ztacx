@@ -40,10 +40,30 @@ config ZTACX_LEAF_GPS
        bool "Enable Ztacx leaf for serial GPS"
        default n
 
+config ZTACX_LEAF_KP
+       bool "Enable Ztacx leaf for i2c keypad"
+       default n
+       select I2C
+
 config ZTACX_LEAF_LED
-       bool "Enable Ztacx leaf for status LED(s)"
+       bool "Enable Ztacx leaf for the default status LED"
        default n
        select GPIO
+
+config ZTACX_KP_BUS
+       string "I2C bus for keypad"
+       default I2C_1
+       depends on ZTACX_LEAF_KP 
+
+config ZTACX_KP_ADDR
+       int "I2C address for keypad"
+       default 32
+       depends on ZTACX_LEAF_KP
+
+config ZTACX_KP_INTERVAL
+       int "Keypad scan interval milliseconds"
+       default 100
+       depends on ZTACX_LEAF_KP
 
 config ZTACX_LED_CYCLE
        int "Defalt LED blink rate in milliseconds"
@@ -53,7 +73,7 @@ config ZTACX_LED_CYCLE
 config ZTACX_LED_DUTY
        int "Defalt LED duty cycle in percent"
        default 50
-       depends on ZTACX_LEAF_LED 
+       depends on ZTACX_LEAF_LED
 
 config ZTACX_LEAF_LIDAR
        bool "Enable Ztacx leaf for LIDAR sensor(s)"
@@ -62,6 +82,25 @@ config ZTACX_LEAF_LIDAR
 config ZTACX_LEAF_LUX
        bool "Enable Ztacx leaf for light level sensor(s)"
        default n
+
+config ZTACX_LEAF_IMS
+       bool "Enable Ztacx leaf for inerial measurement sensor"
+       default n
+
+config ZTACX_IMS_DEVICE
+       string "Name of device to use for IMS readings"
+       default "IMS"
+       depends on ZTACX_LEAF_IMS
+
+config ZTACX_IMS_READ_INTERVAL_USEC
+       int "Time between samples in microseconds"
+       default 1000
+       depends on ZTACX_LEAF_IMS
+
+config ZTACX_IMS_CHANGE_THRESHOLD
+       int "Significant change threshold (in cm/s/s)"
+       default 10
+       depends on ZTACX_LEAF_IMS
 
 config ZTACX_LEAF_BUTTON
        bool "Enable Ztacx leaf for input button(s)"
@@ -86,8 +125,8 @@ config ZTACX_LEAF_PWMLED
 config ZTACX_LEAF_SETTINGS
        bool "Enable Ztacx leaf for peristent settings"
        default n
+       select SETTINGS
        
-
 config ZTACX_LEAF_LORAWAN
        bool "Enable Ztacx leaf for LoRaWAN"
        default n

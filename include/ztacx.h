@@ -3,17 +3,18 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <init.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
-#include <sys/mutex.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/mutex.h>
 
 #ifdef __main__
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
@@ -26,13 +27,6 @@ extern int device_id_len;
 extern char device_id_str[35];
 extern char device_id_short[7];
 extern char name_setting[21];
-
-#ifndef POST_ERROR_HISTORY_LEN
-#define POST_ERROR_HISTORY_LEN 5
-#endif
-
-extern char post_error_history[POST_ERROR_HISTORY_LEN];
-extern const char *post_error_names[];
 
 struct ztacx_leaf;
 struct ztacx_leaf_class;
@@ -104,11 +98,13 @@ struct ztacx_leaf
 #define ZTACX_CLASS_DEFINE(class_name,class_cb) \
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = ((struct ztacx_leaf_cb)(class_cb)); \
 	struct ztacx_leaf_class ztacx_class_ ## class_name = {.name=#class_name,.super=NULL,.cb=&ztacx_class_cb_ ## class_name}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY)
+	int ztacx_class_init_ ## class_name (const struct device *notused) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
+	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
 #define ZTACX_SUBCLASS_DEFINE(class_name, super_name , class_cb)				\
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = class_cb;	\
 	struct ztacx_leaf_class ztacx_class_ ## class_name = (struct ztacx_leaf_cb){.name=#class_name,.super=&ztacx_class_ ## super_name,.cb=&ztacx_class_cb_ ## class_name}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_class_init_ ## class_name), (int(*)(const struct device *))ztacx_class_register, (struct device *)&ztacx_class_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY);
+	int ztacx_class_init_ ## class_name (const struct device *notused) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
+	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
 #define ZTACX_CLASS_AUTO_DEFINE(class_name) \
 	extern int ztacx_##class_name##_init(struct ztacx_leaf *leaf);	\
 	extern int ztacx_##class_name##_start(struct ztacx_leaf *leaf);	\
@@ -144,10 +140,18 @@ struct ztacx_leaf
 #ifdef __main__
 #define ZTACX_LEAF_DEFINE(class_name, leaf_name, context_ptr) \
 	struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name = {.name=#leaf_name,.class=&(ztacx_class_##class_name), .context=(void*)(context_ptr)}; \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_init_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_init, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_INIT_PRIORITY); \
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(ztacx_leaf_start_##class_name##_##leaf_name), (int(*)(const struct device *))ztacx_leaf_sys_start, (struct device *)&ztacx_leaf_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY);
+	int ztacx_leaf_init_##class_name##_##leaf_name(const struct device *notused) {return ztacx_leaf_sys_init(&ztacx_leaf_##class_name##_##leaf_name);} \
+	SYS_INIT(ztacx_leaf_init_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_INIT_PRIORITY); \
+	int ztacx_leaf_start_##class_name##_##leaf_name(const struct device *notused) {return ztacx_leaf_sys_start(&ztacx_leaf_##class_name##_##leaf_name);} \
+	SYS_INIT(ztacx_leaf_start_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY); 
+#define ZTACX_LEAF_DEFINE_NOCONTEXT(class_name, leaf_name) ZTACX_LEAF_DEFINE(class_name, leaf_name, NULL)
+#define ZTACX_LEAF_DEFINE_AUTOCONTEXT(class_name, leaf_name) \
+	struct ztacx_##class_name##_context ztacx_##class_name##_##leaf_name##_context;	\
+	ZTACX_LEAF_DEFINE(class_name, leaf_name, &ztacx_##class_name##_##leaf_name##_context)
 #else
 #define ZTACX_LEAF_DEFINE(class_name, leaf_name, context_ptr) extern struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name
+#define ZTACX_LEAF_DEFINE_NOCONTEXT(class_name, leaf_name) extern struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name
+#define ZTACX_LEAF_DEFINE_AUTOCONTEXT(class_name, leaf_name) extern struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name
 #endif
 
 /**
@@ -188,6 +192,7 @@ struct ztacx_variable
 	char name[CONFIG_ZTACX_VALUE_NAME_MAX];
 	enum ztacx_value_kind kind;
 	union ztacx_value value;
+	struct k_work *on_change;
 	sys_snode_t node;
 };
 int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct ztacx_variable *v, int count);
@@ -211,6 +216,10 @@ int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct zta
        return -1;                                                       \
        }
 
+#define CTX_SETTING(_s) (context->settings[SETTING_##_s])
+#define CTX_VALUE(_s) (context->values[VALUE_##_s])
+
+
 //
 // functions for working with ztacx_variable items
 //
@@ -220,16 +229,28 @@ extern struct ztacx_variable *ztacx_variable_find(const char *name);
 extern int ztacx_variable_get(const char *name, void *value_r, int value_size);
 extern int ztacx_variable_set(const char *name, void *value);
 
+extern struct ztacx_variable *ztacx_variables_copy(struct ztacx_variable *dst, const struct ztacx_variable *src, int count, const char *prefix);
+extern struct ztacx_variable *ztacx_variables_dup(const struct ztacx_variable *v, int count, const char *prefix);
 extern int ztacx_variable_value_get(const struct ztacx_variable *v, void *value_r, int value_size);
 extern bool ztacx_variable_value_get_bool(struct ztacx_variable *v);
+extern uint8_t ztacx_variable_value_get_byte(struct ztacx_variable *v);
 extern uint16_t ztacx_variable_value_get_uint16(struct ztacx_variable *v);
+extern int16_t ztacx_variable_value_get_int16(struct ztacx_variable *v);
+extern int32_t ztacx_variable_value_get_int32(struct ztacx_variable *v);
+extern int64_t ztacx_variable_value_get_int64(struct ztacx_variable *v);
 
-extern int ztacx_variable_value_set(struct ztacx_variable *v, void *value);
+extern int ztacx_variable_value_set(struct ztacx_variable *v, const void *value);
 extern int ztacx_variable_value_set_string(struct ztacx_variable *v, const char *value);
 extern int ztacx_variable_value_set_bool(struct ztacx_variable *v, bool value);
+extern int ztacx_variable_value_set_byte(struct ztacx_variable *v, uint8_t value);
+extern int ztacx_variable_value_set_uint16(struct ztacx_variable *v, uint16_t value);
 extern int ztacx_variable_value_set_int16(struct ztacx_variable *v, int16_t value);
 extern int ztacx_variable_value_set_int32(struct ztacx_variable *v, int32_t value);
 extern int ztacx_variable_value_set_int64(struct ztacx_variable *v, int64_t value);
+extern int ztacx_variable_value_inc_int64(struct ztacx_variable *v);
+
+extern int ztacx_variable_ptr_set_onchange(struct ztacx_variable *v, struct k_work *work);
+extern int ztacx_variable_set_onchange(const char *name, struct k_work *work);
 
 extern int ztacx_variables_register(struct ztacx_variable *v, int count);
 extern void ztacx_variables_show();
@@ -237,7 +258,10 @@ extern void ztacx_variables_show();
 
 // Functions for inspecting and modifying leaves (modules)
 //
+typedef int (*ztacx_leaf_find_cb_t)(const struct ztacx_leaf *leaf, void *compare);
+
 extern struct ztacx_leaf *ztacx_leaf_get(const char *name);
+extern struct ztacx_leaf *ztacx_leaf_find(const char *class, void *compare, ztacx_leaf_find_cb_t cb);
 extern int ztacx_leaf_start(const char *name);
 extern int ztacx_leaf_stop(const char *name);
 extern bool ztacx_leaf_is_ready(const char *name);
@@ -259,12 +283,6 @@ extern int ztacx_post_sleep(void);
 #if CONFIG_ZTACX_LEAF_BATTERY
 #include "ztacx_battery.h"
 #endif
-#if CONFIG_ZTACX_LEAF_BT_CENTRAL
-#include "ztacx_bt_central.h"
-#endif
-#if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
-#include "ztacx_bt_peripheral.h"
-#endif
 #if CONFIG_ZTACX_LEAF_BT_UART
 #include "ztacx_bt_uart.h"
 #endif
@@ -274,8 +292,11 @@ extern int ztacx_post_sleep(void);
 #if CONFIG_ZTACX_LEAF_GPS
 #include "ztacx_gps.h"
 #endif
-#if CONFIG_ZTACX_LEAF_I2C0 || CONFIG_ZTACX_LEAF_I2C1
-#include "ztacx_i2c.h"
+#if CONFIG_ZTACX_LEAF_IMS
+#include "ztacx_ims.h"
+#endif
+#if CONFIG_ZTACX_LEAF_KP
+#include "ztacx_kp.h"
 #endif
 #if CONFIG_ZTACX_LEAF_LED
 #include "ztacx_led.h"
@@ -300,6 +321,15 @@ extern int ztacx_post_sleep(void);
 #endif
 #if CONFIG_ZTACX_LEAF_TEMP
 #include "ztacx_temp.h"
+#endif
+#if CONFIG_ZTACX_LEAF_I2C0 || CONFIG_ZTACX_LEAF_I2C1
+#include "ztacx_i2c.h"
+#endif
+#if CONFIG_ZTACX_LEAF_BT_CENTRAL
+#include "ztacx_bt_central.h"
+#endif
+#if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
+#include "ztacx_bt_peripheral.h"
 #endif
 // settings must be last
 #if CONFIG_ZTACX_LEAF_SETTINGS

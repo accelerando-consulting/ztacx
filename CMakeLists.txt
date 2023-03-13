@@ -8,6 +8,8 @@ target_sources_ifdef(CONFIG_ZTACX_LEAF_BT_UART       app PRIVATE src/ztacx_bt_ua
 target_sources_ifdef(CONFIG_ZTACX_LEAF_BUTTON        app PRIVATE src/ztacx_button.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_GPS           app PRIVATE src/ztacx_gps.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_I2C           app PRIVATE src/ztacx_i2c.c)
+target_sources_ifdef(CONFIG_ZTACX_LEAF_IMS           app PRIVATE src/ztacx_ims.c)
+target_sources_ifdef(CONFIG_ZTACX_LEAF_KP            app PRIVATE src/ztacx_kp.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_LED           app PRIVATE src/ztacx_led.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_LIDAR         app PRIVATE src/ztacx_lidar.c)
 target_sources_ifdef(CONFIG_ZTACX_LEAF_LORAWAN       app PRIVATE src/ztacx_lorawan.c)

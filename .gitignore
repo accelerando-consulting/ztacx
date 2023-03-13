@@ -1,3 +1,6 @@
 samples/*/ztacx
 **/.build
 **/build
+*.swp
+**/.DS_Store
+**/*sync-conflict-*

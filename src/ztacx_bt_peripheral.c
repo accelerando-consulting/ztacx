@@ -14,17 +14,17 @@
 #include <mgmt/mcumgr/smp_bt.h>
 #endif
 
+#if CONFIG_BT_DEVICE_NAME_DYNAMIC || CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 enum bt_peripheral_setting_index {
 	SETTING_DEVICE_NAME = 0,
-	SETTING_SERVICE_ID,
 	SETTING_TX_POWER,
 };
 
 static struct ztacx_variable bt_peripheral_settings[] = {
 	{"peripheral_name", ZTACX_VALUE_STRING},
-	{"peripheral_service_id", ZTACX_VALUE_STRING},
 	{"peripheral_tx_power", ZTACX_VALUE_UINT16,{.val_uint16 = 0}},
 };
+#endif
 
 enum peripheral_value_index {
 	VALUE_OK = 0,
@@ -201,10 +201,12 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
 
-		if (offset+len > strlen(v->value.val_string)) {
-			v->value.val_string = realloc(v->value.val_string, offset+len);
+		char *val_string = v->value.val_string;
+		if (offset+len > strlen(val_string)) {
+			val_string = realloc(val_string, offset+len);
 		}
-		strncpy(v->value.val_string + offset, value_buf, STRING_CHAR_MAX-offset+1);
+		strncpy(val_string + offset, value_buf, STRING_CHAR_MAX-offset+1);
+		ztacx_variable_value_set_string(v, val_string);
 	}
 		break;
 	case ZTACX_VALUE_BOOL: 
@@ -214,8 +216,10 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		if (offset + len > sizeof(bool)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
-		char *value = (char *)&v->value.val_bool;
+		bool val_bool = ztacx_variable_value_get_bool(v);
+		char *value = (char *)&val_bool;
 		memcpy(value + offset, buf, len);
+		ztacx_variable_value_set_bool(v, val_bool);
 	}
 		break;
 	case ZTACX_VALUE_BYTE:
@@ -226,20 +230,23 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		if (offset + len > sizeof(uint16_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
-		char *value = (char *)&v->value.val_byte;
+		uint8_t val_byte = ztacx_variable_value_get_byte(v);
+		char *value = (char *)&val_byte;
 		memcpy(value + offset, buf, len);
+		ztacx_variable_value_set_byte(v, val_byte);
 	}
 	        break;
 	case ZTACX_VALUE_UINT16: 
 	{
 		uint16_t newval = ((uint16_t*)buf)[0];
 		LOG_INF("write_uint16 %s <= %d", log_strdup(desc), (int)newval);
-
 		if (offset + len > sizeof(uint16_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
-		char *value = (char *)&v->value.val_uint16;
+		uint16_t val_uint16 = ztacx_variable_value_get_uint16(v);
+		char *value = (char *)&val_uint16;
 		memcpy(value + offset, buf, len);
+		ztacx_variable_value_set_uint16(v, val_uint16);
 	}
 		break;
 	case ZTACX_VALUE_INT16:
@@ -250,8 +257,10 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		if (offset + len > sizeof(int16_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
-		char *value = (char *)&v->value.val_int16;
+		int16_t val_int16 = ztacx_variable_value_get_int16(v);
+		char *value = (char *)&val_int16;
 		memcpy(value + offset, buf, len);
+		ztacx_variable_value_set_int16(v, val_int16);
 	}
 	case ZTACX_VALUE_INT32:
 	{
@@ -261,8 +270,10 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		if (offset + len > sizeof(int32_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
-		char *value = (char *)&v->value.val_int32;
+		uint16_t val_int32 = ztacx_variable_value_get_int32(v);
+		char *value = (char *)&val_int32;
 		memcpy(value + offset, buf, len);
+		ztacx_variable_value_set_int32(v, val_int32);
 	}
 	case ZTACX_VALUE_INT64:
 	{
@@ -272,8 +283,10 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		if (offset + len > sizeof(int64_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
+		uint64_t val_int64 = ztacx_variable_value_get_int64(v);
 		char *value = (char *)&v->value.val_int64;
 		memcpy(value + offset, buf, len);
+		ztacx_variable_value_set_int64(v, val_int64);
 	}
 	default:
 		LOG_ERR("Unhandled variable kind %d", (int)v->kind);
@@ -285,6 +298,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 int ztacx_bt_adv_register(const struct bt_data *adv_data, int adv_len, const struct bt_data *scanresp, int sr_len) 
 {
+	LOG_INF("bt_adv_register");
 	stop_advertise();
 
 	bt_adv_data = adv_data;
@@ -292,11 +306,14 @@ int ztacx_bt_adv_register(const struct bt_data *adv_data, int adv_len, const str
 	bt_scanresp = scanresp;
 	bt_scanresp_size = sr_len;
 	
-	
 	if (ztacx_variable_value_get_bool(&bt_peripheral_values[VALUE_OK]) && bt_adv_data && bt_adv_data_size) {
 		LOG_INF("Registering advertising data with bluetooth subsystem");
 		k_work_submit(&advertise_work);
 	}
+	else {
+		LOG_INF("Bluetooth is not ready (will advertise later)");
+	}
+		
 	return 0;
 }
 
@@ -304,6 +321,7 @@ int ztacx_bt_adv_register(const struct bt_data *adv_data, int adv_len, const str
 #if CONFIG_BT_GATT_DYNAMIC_DB
 int ztacx_bt_service_register(const struct bt_gatt_attr *attrs, int count, struct bt_gatt_service **service_r) 
 {
+	LOG_INF("bt_service_register");
 	struct bt_gatt_service *service;
 	
 	if (!service_r) {
@@ -646,8 +664,8 @@ static void bt_ready(int err)
 
 int create_bt_addr_for_device()
 {
-	LOG_DBG("Generating fixed bluetooth address");
 #if CONFIG_BT_ID_MAX > 1
+	LOG_INF("Generating fixed bluetooth address");
 	int err;
 
 	// use a fixed BT addr
@@ -673,11 +691,14 @@ int ztacx_bt_peripheral_init(struct ztacx_leaf *leaf)
 {
 	//int8_t txp_get = 0xFF;
 
-	LOG_INF("Initialising Bluetooth Peripheral");
+	LOG_INF("ztacx_bt_peripheral_init");
 
 	k_work_init(&advertise_work, advertise);
 
+#if CONFIG_ZTACX_LEAF_SETTINGS && (CONFIG_BT_DEVICE_NAME_DYNAMIC || CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+
 	ztacx_settings_register(bt_peripheral_settings, ARRAY_SIZE(bt_peripheral_settings));
+#endif
 	ztacx_variables_register(bt_peripheral_values, ARRAY_SIZE(bt_peripheral_values));
 
 	bt_conn_cb_register(&conn_callbacks);
@@ -699,7 +720,7 @@ int ztacx_bt_peripheral_init(struct ztacx_leaf *leaf)
 
 int ztacx_bt_peripheral_start(struct ztacx_leaf *leaf)
 {
-	LOG_INF("");
+	LOG_INF("ztacx_bt_peripheral_start");
 	
 	create_bt_addr_for_device();
 

@@ -1,10 +1,10 @@
 #include "ztacx.h"
-#include <device.h>
-#include <init.h>
-#include <pm/pm.h>
-#include <pm/device.h>
-#include <hal/nrf_gpio.h>
-#include <shell/shell.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/hal/nrf_gpio.h>
+#include <zephyr/shell/shell.h>
 
 #define CONSOLE_LABEL DT_LABEL(DT_CHOSEN(zephyr_console))
 

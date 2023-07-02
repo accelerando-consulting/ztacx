@@ -1,6 +1,6 @@
 #include "ztacx.h"
-#include <bluetooth/bluetooth.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/drivers/hwinfo.h>
 
 uint8_t device_id[16]="";
 int device_id_len = 0;
@@ -13,7 +13,7 @@ static sys_slist_t ztacx_classes;
 static sys_slist_t ztacx_leaves;
 static sys_slist_t ztacx_variables;
 
-static int ztacx_init(const struct device *_unused) ;
+static int ztacx_init(void) ;
 SYS_INIT(ztacx_init, APPLICATION, ZTACX_INIT_PRIORITY);
 
 bool ztacx_init_done = false;
@@ -22,7 +22,7 @@ SYS_MUTEX_DEFINE(ztacx_registry_mutex);
 SYS_MUTEX_DEFINE(ztacx_variables_mutex);
 
 #if CONFIG_SHELL
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #define MAX_CMD_CNT (20u)
 
@@ -71,7 +71,7 @@ SHELL_CMD_REGISTER(ztacx, &m_sub_ztacx,
 
 #endif
 
-static int ztacx_init(const struct device *_unused)
+static int ztacx_init(void)
 {
 	LOG_INF("ztacx_init");
 	/*
@@ -96,7 +96,7 @@ static int ztacx_init(const struct device *_unused)
 		strcpy(device_id_short, device_id_str + strlen(device_id_str) - 4);
 	}
 	
-	LOG_INF("NOTICE Hardware id is '%s' [%s]", log_strdup(device_id_str), log_strdup(device_id_short));
+	LOG_INF("NOTICE Hardware id is '%s' [%s]", device_id_str, device_id_short);
 	strncat(name_setting, "-", sizeof(name_setting)-1);
 	strncat(name_setting, device_id_short, sizeof(name_setting)-1);
 
@@ -116,23 +116,23 @@ static int ztacx_init(const struct device *_unused)
 
 int ztacx_class_register(struct ztacx_leaf_class *class)
 {
-	LOG_INF("ztacx_class_register %s", log_strdup(class->name));
+	LOG_INF("ztacx_class_register %s", class->name);
 	while (sys_mutex_lock(&ztacx_registry_mutex, K_MSEC(100)) != 0) {
 		LOG_WRN("ztacx registry mutex is held too long");
 	}
 	sys_slist_append(&ztacx_classes, &class->node);
 	sys_mutex_unlock(&ztacx_registry_mutex);
-	LOG_DBG("ztacx_class_register %s OK", log_strdup(class->name));
+	LOG_DBG("ztacx_class_register %s OK", class->name);
 	return 0;
 }
 
 int ztacx_leaf_sys_init(struct ztacx_leaf *leaf)
 {
-	LOG_INF("ztacx_leaf_sys_init %s", log_strdup(leaf->name));
+	LOG_INF("ztacx_leaf_sys_init %s", leaf->name);
 	int rc = 0;
 
-	LOG_INF("NOTICE >INIT %s/%s", log_strdup(leaf->class->name),
-		log_strdup(leaf->name));
+	LOG_INF("NOTICE >INIT %s/%s", leaf->class->name,
+		leaf->name);
 	while (sys_mutex_lock(&ztacx_registry_mutex, K_MSEC(100)) != 0) {
 		LOG_WRN("ztacx registry mutex is held too long");
 	}
@@ -143,16 +143,16 @@ int ztacx_leaf_sys_init(struct ztacx_leaf *leaf)
 		rc = leaf->class->cb->init(leaf);
 
 		if (rc == 0) {
-			LOG_INF("NOTICE <READY %s", log_strdup(leaf->name));
+			LOG_INF("NOTICE <READY %s", leaf->name);
 			leaf->ready = true;
 		}
 		else {
-			LOG_WRN("INIT RESULT %s rc=%d", log_strdup(leaf->name), rc);
+			LOG_WRN("INIT RESULT %s rc=%d", leaf->name, rc);
 		}
 	}
 	else {
 		// no callback, but emit the same log messages as if there were
-		LOG_INF("NOTICE <READY %s", log_strdup(leaf->name));
+		LOG_INF("NOTICE <READY %s", leaf->name);
 		leaf->ready = true;
 	}
 	return rc;
@@ -160,29 +160,29 @@ int ztacx_leaf_sys_init(struct ztacx_leaf *leaf)
 
 int ztacx_leaf_sys_start(struct ztacx_leaf *leaf)
 {
-	LOG_INF("ztacx_leaf_sys_start %s", log_strdup(leaf->name));
+	LOG_INF("ztacx_leaf_sys_start %s", leaf->name);
 	int rc = 0;
 	if (!leaf->ready) {
 		return -ESRCH;
 	}
 	if (leaf->class->cb->start) {
 		LOG_INF("NOTICE >START %s/%s",
-			log_strdup(leaf->class->name), log_strdup(leaf->name));
+			leaf->class->name, leaf->name);
 		rc = leaf->class->cb->start(leaf);
 		if (rc == 0) {
 			leaf->running=true;
-			LOG_INF("NOTICE <STARTED %s", log_strdup(leaf->name));
+			LOG_INF("NOTICE <STARTED %s", leaf->name);
 		}
 		else {
-			LOG_WRN("START RESULT %s rc=%d", log_strdup(leaf->name), rc);
+			LOG_WRN("START RESULT %s rc=%d", leaf->name, rc);
 		}
 	}
 	else {
 		// no callback, but emit the same log messages as if there were
 		LOG_INF("NOTICE >START %s/%s",
-			log_strdup(leaf->class->name), log_strdup(leaf->name));
+			leaf->class->name, leaf->name);
 		leaf->running=true;
-		LOG_INF("NOTICE <STARTED %s", log_strdup(leaf->name));
+		LOG_INF("NOTICE <STARTED %s", leaf->name);
 	}
 	return rc;
 }
@@ -199,7 +199,7 @@ static int shell_cmd_cmp(const void *p_a, const void *p_b)
 
 int ztacx_shell_cmd_register(struct shell_static_entry entry)
 {
-	LOG_INF("ztacx_shell_cmd_register %s", log_strdup(entry.syntax));
+	LOG_INF("ztacx_shell_cmd_register %s", entry.syntax);
 
 	if (dynamic_cmd_cnt >= MAX_CMD_CNT) {
 		LOG_ERR("Ztacx shell command table is full");
@@ -242,7 +242,7 @@ int cmd_ztacx_status(const struct shell *shell, size_t argc, char **argv)
 	sys_slist_t *list = &ztacx_leaves;
 	struct ztacx_leaf *leaf;
 	SYS_SLIST_FOR_EACH_CONTAINER(list, leaf, node) {
-		shell_print(shell, "%s: %s %s", log_strdup(leaf->name), leaf->ready?"READY":"FAILED", leaf->running?"RUNNING":"STOPPED");
+		shell_print(shell, "%s: %s %s", (leaf->name), leaf->ready?"READY":"FAILED", leaf->running?"RUNNING":"STOPPED");
 	}
 
 	return 0;
@@ -251,7 +251,7 @@ int cmd_ztacx_status(const struct shell *shell, size_t argc, char **argv)
 int cmd_ztacx_boot(const struct shell *shell, size_t argc, char **argv)
 {
 	LOG_DBG("");
-	int rc  = ztacx_init(NULL);
+	int rc  = ztacx_init();
 	if (rc == 0) {
 		shell_print(shell, "booted");
 	}
@@ -311,7 +311,7 @@ int cmd_ztacx_stop(const struct shell *shell, size_t argc, char **argv)
  */
 int cmd_ztacx_value(const struct shell *shell, size_t argc, char **argv)
 {
-	LOG_INF("cmd_ztacx_value argc=%d argv[1]=%s", argc, log_strdup(argv[1]));
+	LOG_INF("cmd_ztacx_value argc=%d argv[1]=%s", argc, (argv[1]));
 
 	if ((argc == 1) ||
 	    ((argc >= 2) && ((strcmp(argv[1], "list")==0) || (strcmp(argv[1], "show")==0)))) {
@@ -520,7 +520,7 @@ int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct zta
 	for (int i=0; i<count; i++) {
 		LOG_INF("register %s %d/%d: %s kind=%d",
 			(list==&ztacx_variables)?"variable":"setting",
-			i+1, count, log_strdup(v[i].name), (int)(v[i].kind));
+			i+1, count, v[i].name, (int)(v[i].kind));
 		//LOG_HEXDUMP_INF(&(s[i].value), sizeof(s[i].value), "value dump");
 		sys_slist_append(list, &(v[i].node));
 	}
@@ -567,7 +567,7 @@ int ztacx_variable_describe(char *buf, int buf_max, const struct ztacx_variable 
 		snprintf(buf, buf_max, "%s=(int64)[%ld]", s->name, (long)s->value.val_int64); // fixme lld?
 		break;
 	default:
-		LOG_ERR("   %s=(unk)[%d]", log_strdup(s->name), (int)s->kind);
+		LOG_ERR("   %s=(unk)[%d]", s->name, (int)s->kind);
 		return -EINVAL;
 	}
 	return 0;
@@ -727,11 +727,37 @@ int ztacx_variable_value_inc_int64(struct ztacx_variable *v)
 	return ztacx_variable_value_set_int64(v, val_int64);
 }
 
+int ztacx_variable_value_set_event(struct ztacx_variable *v, uint32_t event)
+{
+	if (v->value.val_event) {
+		k_event_set(v->value.val_event, event);
+		return 0;
+	}
+	return -ENODEV;
+}
+
+int ztacx_variable_value_post_event(struct ztacx_variable *v, uint32_t event)
+{
+	if (v->value.val_event) {
+		k_event_post(v->value.val_event, event);
+		return 0;
+	}
+	return -ENODEV;
+}
+
+uint32_t ztacx_variable_value_wait_event(struct ztacx_variable *v, uint32_t mask, k_timeout_t timeout)
+{
+	if (v->value.val_event) {
+		return k_event_wait(v->value.val_event, mask, true, timeout);
+	}
+	return 0;
+}
+
 bool ztacx_variable_value_get_bool(struct ztacx_variable *v)
 {
 	bool value = false;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
+		LOG_ERR("Error fetching value of variable %s", v->name);
 	}
 	return value;
 }
@@ -740,7 +766,7 @@ uint8_t ztacx_variable_value_get_byte(struct ztacx_variable *v)
 {
 	uint8_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
+		LOG_ERR("Error fetching value of variable %s", v->name);
 	}
 	return value;
 }
@@ -749,7 +775,7 @@ uint16_t ztacx_variable_value_get_uint16(struct ztacx_variable *v)
 {
 	uint16_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
+		LOG_ERR("Error fetching value of variable %s", v->name);
 	}
 	return value;
 }
@@ -758,7 +784,7 @@ int16_t ztacx_variable_value_get_int16(struct ztacx_variable *v)
 {
 	int16_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
+		LOG_ERR("Error fetching value of variable %s", v->name);
 	}
 	return value;
 }
@@ -767,7 +793,7 @@ int32_t ztacx_variable_value_get_int32(struct ztacx_variable *v)
 {
 	int32_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
+		LOG_ERR("Error fetching value of variable %s", v->name);
 	}
 	return value;
 }
@@ -776,7 +802,7 @@ int64_t ztacx_variable_value_get_int64(struct ztacx_variable *v)
 {
 	int64_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", log_strdup(v->name));
+		LOG_ERR("Error fetching value of variable %s", v->name);
 	}
 	return value;
 }
@@ -803,31 +829,31 @@ int ztacx_variable_value_get(const struct ztacx_variable *v, void *value_r, int 
 		}
 		// copy the value string into the return buffer
 		strncpy(value_r, v->value.val_string, value_size);
-		LOG_DBG("GET %s => [%s]", log_strdup(v->name), log_strdup(v->value.val_string));
+		LOG_DBG("GET %s => [%s]", v->name, v->value.val_string);
 		break;
 	case ZTACX_VALUE_BOOL:
 		*(bool *)value_r = v->value.val_bool;
-		LOG_DBG("GET %s => %c", log_strdup(v->name), v->value.val_bool?'T':'F');
+		LOG_DBG("GET %s => %c", v->name, v->value.val_bool?'T':'F');
 		break;
 	case ZTACX_VALUE_BYTE:
 		*(uint8_t *)value_r = v->value.val_byte;
-		LOG_DBG("GET %s => %d", log_strdup(v->name), (int)v->value.val_byte);
+		LOG_DBG("GET %s => %d", v->name, (int)v->value.val_byte);
 		break;
 	case ZTACX_VALUE_UINT16:
 		*(uint16_t *)value_r = v->value.val_uint16;
-		LOG_DBG("GET %s => %d", log_strdup(v->name), (int)v->value.val_uint16);
+		LOG_DBG("GET %s => %d", v->name, (int)v->value.val_uint16);
 		break;
 	case ZTACX_VALUE_INT16:
 		*(int16_t *)value_r = v->value.val_int16;
-		LOG_DBG("GET %s => %d", log_strdup(v->name), (int)v->value.val_int16);
+		LOG_DBG("GET %s => %d", v->name, (int)v->value.val_int16);
 		break;
 	case ZTACX_VALUE_INT32:
 		*(int32_t *)value_r = v->value.val_int32;
-		LOG_DBG("GET %s => %d", log_strdup(v->name), (int)v->value.val_int32);
+		LOG_DBG("GET %s => %d", v->name, (int)v->value.val_int32);
 		break;
 	case ZTACX_VALUE_INT64:
 		*(int64_t *)value_r = v->value.val_int64;
-		LOG_DBG("GET %s => %d", log_strdup(v->name), (int)v->value.val_int64);
+		LOG_DBG("GET %s => %d", v->name, (int)v->value.val_int64);
 		break;
 	default:
 		LOG_ERR("Unhandled variable type %d", (int)v->kind);
@@ -848,7 +874,7 @@ struct ztacx_variable *ztacx_variable_find(const char *name)
 			return v;
 		}
 	}
-	LOG_WRN("no variable named '%s' found", log_strdup(name));
+	LOG_WRN("no variable named '%s' found", name);
 	return NULL;
 }
 

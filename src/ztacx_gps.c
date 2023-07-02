@@ -2,9 +2,9 @@
 
 #include <zephyr/types.h>
 #include <errno.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <math.h>
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 static bool ready = false;
 double lat = 0;
@@ -316,7 +316,7 @@ static int gps_location_line(char *buf)
 			word[2]='\0';
 			second = atoi(word);
 			snprintf(word,sizeof(word), "%02d:%02d:%02d", hour, minute, second);
-			//LOG_INF("Parsed GPS Timestamp %s (local time)", log_strdup(word));
+			//LOG_INF("Parsed GPS Timestamp %s (local time)", word);
 			break;
 		}
 	}
@@ -398,7 +398,7 @@ static int gps_date_line(char *buf)
 			zmin = atoi(field);
 			snprintf(word, sizeof(word), "%d-%02d-%02dT%02d:%02d:%02dZ%02d%02d",
 				 year, month, day, hour, minute, second, zone, zmin);
-			//LOG_INF("Parsed date/time [%s]", log_strdup(word));
+			//LOG_INF("Parsed date/time [%s]", word);
 			break;
 		}
 	}
@@ -409,12 +409,12 @@ static int gps_date_line(char *buf)
 
 static int gps_line(char *buf)
 {
-	//LOG_INF("%s", log_strdup(buf));
+	//LOG_INF("%s", buf);
 	char *comma = strchr(buf, ',');
 	char *sentence;
 
 	if (!comma) {
-		//LOG_WRN("Unrecognised GPS input [%s]", log_strdup(buf));
+		//LOG_WRN("Unrecognised GPS input [%s]", buf);
 		return -1;
 	}
 
@@ -427,7 +427,7 @@ static int gps_line(char *buf)
 	}
 	else if (strcmp(buf, "$GPGGA")==0) {
 		// $GPGGA - Global Positioning System Fix Data
-		//LOG_INF("%s,%s", log_strdup(buf),log_strdup(sentence));
+		//LOG_INF("%s,%s", buf,sentence);
 	}
 	else if (strcmp(buf, "$GPRMC")==0) {
 		// $GPRMC - Recommended minimum specific GPS/Transit data

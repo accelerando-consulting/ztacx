@@ -50,14 +50,14 @@ BT_GATT_SERVICE_DEFINE(
 
 #endif
 
-static int app_init(const struct device *unused) 
+static int app_init(void) 
 {
 	printk("bt_peripheral sample app_init\n");
 	LOG_INF("NOTICE bt_peripheral sample Initialising app variables");
-	//ZTACX_SETTING_FIND_AS(led_duty, led0_duty);
-	//ZTACX_SETTING_FIND_AS(led_cycle, led0_cycle);
-	//ZTACX_VAR_FIND_AS(led_blink, led0_blink);
-	//ZTACX_VAR_FIND_AS(led_lit, led0_lit);
+	ZTACX_SETTING_FIND_AS(led_duty, led0_duty);
+	ZTACX_SETTING_FIND_AS(led_cycle, led0_cycle);
+	ZTACX_VAR_FIND_AS(led_blink, led0_blink);
+	ZTACX_VAR_FIND_AS(led_lit, led0_lit);
 
 #if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
 	LOG_INF("Registering adversiging data");

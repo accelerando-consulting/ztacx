@@ -5,7 +5,7 @@
  *
  * Values:
  */
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #ifndef ZTACX_BUTTON_MAX
 #define ZTACX_BUTTON_MAX 4

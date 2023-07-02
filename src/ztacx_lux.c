@@ -2,14 +2,14 @@
 #include "ztacx_settings.h"
 
 #include <math.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/sensor.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
-#include <shell/shell.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/shell/shell.h>
 
 #define INVALID_LEVEL 65535
 
@@ -64,7 +64,7 @@ int ztacx_lux_init(struct ztacx_leaf *leaf)
 				}));
 #endif
 
-	LOG_INF("  LUX present on I2C as %s", log_strdup(lux_dev->name));
+	LOG_INF("  LUX present on I2C as %s", lux_dev->name);
 	lux_values[VALUE_OK].value.val_bool = true;
 	return 0;
 }

@@ -2,14 +2,14 @@
 #include "ztacx_settings.h"
 
 #include <math.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/sensor.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
-#include <shell/shell.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/shell/shell.h>
 
 #define INVALID_DISTANCE 65535
 
@@ -71,7 +71,7 @@ int ztacx_lidar_init(struct ztacx_leaf *leaf)
 				}));
 #endif
 
-	LOG_INF("  LIDAR present on I2C as %s", log_strdup(lidar_dev->name));
+	LOG_INF("  LIDAR present on I2C as %s", lidar_dev->name);
 	ztacx_variable_value_set_bool(lidar_values[VALUE_OK],true);
 	return 0;
 }

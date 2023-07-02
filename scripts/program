@@ -1,6 +1,6 @@
 #set -x
 [ -n "$OPENOCD" ] || OPENOCD=openocd
-if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=${BUILD_DIR}/zephyr/zephyr.signed.hex ; else OBJECT=${BUILD_DIR}/zephyr ; fi
+if [ "$ZEPHYR_SIGN" = "1" ] ; then OBJECT=${BUILD_DIR}/zephyr/zephyr.signed.hex ; else OBJECT=${BUILD_DIR}/zephyr/zephyr.hex ; fi
 if [ $# -ge 1 ] ; then OBJECT=$1 ; fi
 echo "PROGRAMMING ${BOARD} <= ${OBJECT}"
 if [ -z "$ZEPHYR_HELPER" ]

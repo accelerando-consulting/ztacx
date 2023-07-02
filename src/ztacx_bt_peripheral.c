@@ -2,16 +2,16 @@
 #include "ztacx_settings.h"
 #include "ztacx_bt_peripheral.h"
 
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <sys/reboot.h>
-#include <bluetooth/gap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_vs.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
 
 #if CONFIG_MCUMGR_SMP_BT
-#include <mgmt/mcumgr/smp_bt.h>
+#include <zephyr/mgmt/mcumgr/smp_bt.h>
 #endif
 
 #if CONFIG_BT_DEVICE_NAME_DYNAMIC || CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL
@@ -40,6 +40,10 @@ static struct ztacx_variable bt_peripheral_values[]={
 	{"bt_peripheral_connected", ZTACX_VALUE_BOOL, {.val_bool=false}},
 	{"bt_peripheral_last_connect", ZTACX_VALUE_INT64},
 	{"bt_peripheral_last_disconnect", ZTACX_VALUE_INT64},
+};
+
+struct ztacx_bt_peripheral_context ztacx_bt_peripheral_context = {
+	.conn = NULL
 };
 
 
@@ -125,7 +129,7 @@ ssize_t bt_read_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	char desc[100];
 	struct ztacx_variable *v = *(struct ztacx_variable **)(attr->user_data);
 	ztacx_variable_describe(desc, sizeof(desc), v);
-	LOG_INF("read_variable %s len=%d offset=%d", log_strdup(desc),len, offset);
+	LOG_INF("read_variable %s len=%d offset=%d", desc,len, offset);
 
 	if (offset != 0) {
 		LOG_ERR("Offset handling not implemented");
@@ -194,7 +198,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		}
 		memcpy(value_buf, buf, len);
 		value_buf[len] = '\0';
-		LOG_INF("write_string %s <= [%s]", log_strdup(desc), log_strdup(value_buf));
+		LOG_INF("write_string %s <= [%s]", desc, value_buf);
 
 		// Copy the payload into the destination at the specified offset
 		if (offset + len > STRING_CHAR_MAX) {
@@ -212,7 +216,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	case ZTACX_VALUE_BOOL: 
 	{
 		bool *newval = (bool *)buf;
-		LOG_INF("write_bool %s <= %s", log_strdup(desc), newval?"true":"false");
+		LOG_INF("write_bool %s <= %s", desc, newval?"true":"false");
 		if (offset + len > sizeof(bool)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
@@ -225,7 +229,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	case ZTACX_VALUE_BYTE:
 	{
 		uint8_t newval = ((uint8_t*)buf)[0];
-		LOG_INF("write_byte %s <= %d", log_strdup(desc), (int)newval);
+		LOG_INF("write_byte %s <= %d", desc, (int)newval);
 
 		if (offset + len > sizeof(uint16_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -239,7 +243,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	case ZTACX_VALUE_UINT16: 
 	{
 		uint16_t newval = ((uint16_t*)buf)[0];
-		LOG_INF("write_uint16 %s <= %d", log_strdup(desc), (int)newval);
+		LOG_INF("write_uint16 %s <= %d", desc, (int)newval);
 		if (offset + len > sizeof(uint16_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 		}
@@ -252,7 +256,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	case ZTACX_VALUE_INT16:
 	{
 		int16_t newval = ((int16_t*)buf)[0];
-		LOG_INF("write_int16 %s <= %d", log_strdup(desc), (int)newval);
+		LOG_INF("write_int16 %s <= %d", desc, (int)newval);
 
 		if (offset + len > sizeof(int16_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -265,7 +269,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	case ZTACX_VALUE_INT32:
 	{
 		int32_t newval = ((int32_t*)buf)[0];
-		LOG_INF("write_int32 %s <= %d", log_strdup(desc), (int)newval);
+		LOG_INF("write_int32 %s <= %d", desc, (int)newval);
 
 		if (offset + len > sizeof(int32_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -278,7 +282,7 @@ ssize_t bt_write_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	case ZTACX_VALUE_INT64:
 	{
 		int64_t newval = ((int64_t*)buf)[0];
-		LOG_INF("write_int64 %s <= %d", log_strdup(desc), (int)newval);
+		LOG_INF("write_int64 %s <= %d", desc, (int)newval);
 
 		if (offset + len > sizeof(int64_t)) {
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -555,13 +559,15 @@ void bt_cb_connected(struct bt_conn *conn, uint8_t err)
 	} else {
 		LOG_WRN("Bluetooth central device connected");
 	}
-	ztacx_variable_value_set_bool(&bt_peripheral_values[VALUE_CONNECTED], true);
+	ztacx_bt_peripheral_context.conn = conn;
 	ztacx_variable_value_set_int64(&bt_peripheral_values[VALUE_LAST_CONNECT], k_uptime_get());
+	ztacx_variable_value_set_bool(&bt_peripheral_values[VALUE_CONNECTED], true);
 }
 
 void bt_cb_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_WRN("Bluetooth central device disconnected (reason 0x%02x)", reason);
+
 	ztacx_variable_value_set_int64(&bt_peripheral_values[VALUE_LAST_DISCONNECT], k_uptime_get());
 	ztacx_variable_value_set_bool(&bt_peripheral_values[VALUE_CONNECTED], false);
 	k_work_submit(&advertise_work);
@@ -605,12 +611,12 @@ static void advertise(struct k_work *work)
 	}
 	ztacx_variable_value_set_bool(&bt_peripheral_values[VALUE_ADVERTISING], true);
 	
-	LOG_INF("Bluetooth advertising started (%s)", log_strdup(bt_get_name()));
+	LOG_INF("Bluetooth advertising started (%s)", bt_get_name());
 }
 
 int bt_advertise_name(const char *name)
 {
-	LOG_INF("name=%s", log_strdup(name));
+	LOG_INF("name=%s", name);
 
 	//bt_le_adv_stop();
 
@@ -655,7 +661,7 @@ static void bt_ready(int err)
 		strncpy(name_setting, name_override, sizeof(name_setting));
 	}
 #endif
-	LOG_INF("Bluetooth peripheral name is [%s]", log_strdup(name_setting));
+	LOG_INF("Bluetooth peripheral name is [%s]", name_setting);
 	bt_advertise_name(name_setting);
 
 	ztacx_variable_value_set_bool(&bt_peripheral_values[VALUE_OK], true);

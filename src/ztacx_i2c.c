@@ -1,11 +1,10 @@
 #include "ztacx.h"
 
-#include <device.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 
 void ztacx_i2c_scan(const char *bus)
 {
-	LOG_INF("i2c_scan bus=%s", log_strdup(bus));
+	LOG_INF("i2c_scan bus=%s", bus);
 
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;

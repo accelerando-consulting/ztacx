@@ -93,7 +93,7 @@ BT_GATT_SERVICE_DEFINE(
 	);
 #endif
 
-static int app_init(const struct device *unused) 
+static int app_init(void) 
 {
 	printk("bt_sensor sample app_init\n");
 	LOG_INF("NOTICE bt_sensor sample Initialising app variables");

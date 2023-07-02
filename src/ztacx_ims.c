@@ -2,14 +2,14 @@
 #include "ztacx_settings.h"
 
 #include <math.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/sensor.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
-#include <shell/shell.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/shell/shell.h>
 
 #define INVALID_LEVEL INT32_MAX
 
@@ -79,7 +79,7 @@ int ztacx_ims_init(struct ztacx_leaf *leaf)
 				}));
 #endif
 
-	LOG_INF("  IMS present on I2C as %s", log_strdup(ims_dev->name));
+	LOG_INF("  IMS present on I2C as %s", ims_dev->name);
 	ztacx_variable_value_set_bool(&ims_values[VALUE_OK],true);
 	return 0;
 }

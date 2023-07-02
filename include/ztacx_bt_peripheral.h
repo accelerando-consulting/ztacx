@@ -1,8 +1,8 @@
 #pragma once
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/uuid.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 
 
 #define STRING_CHAR_MAX 20
@@ -97,7 +97,14 @@ extern const struct bt_gatt_cpf bt_gatt_cpf_lux;
 extern int ztacx_bt_peripheral_init(struct ztacx_leaf *leaf);
 extern int ztacx_bt_peripheral_start(struct ztacx_leaf *leaf);
 
+struct ztacx_bt_peripheral_context 
+{
+	struct bt_conn *conn;
+};
+
+extern struct ztacx_bt_peripheral_context ztacx_bt_peripheral_context;
+
 ZTACX_CLASS_DEFINE(bt_peripheral, ((struct ztacx_leaf_cb){.init=&ztacx_bt_peripheral_init,.start=&ztacx_bt_peripheral_start}));
-ZTACX_LEAF_DEFINE(bt_peripheral, bt_peripheral, NULL);
+ZTACX_LEAF_DEFINE(bt_peripheral, bt_peripheral, &ztacx_bt_peripheral_context);
 
 

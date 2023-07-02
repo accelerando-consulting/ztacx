@@ -2,21 +2,21 @@
 
 #include <zephyr/types.h>
 
-#include <device.h>
-#include <sys/printk.h>
-#include <sys/util.h>
-#include <sys/types.h>
-#include <sys/byteorder.h>
-#include <sys/ring_buffer.h>
-#include <drivers/uart.h>
-#include <logging/log_backend.h>
-#include <logging/log_backend_std.h>
-#include <logging/log_ctrl.h>
-#include <sys/mutex.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/types.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/mutex.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/uuid.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 
 #ifndef BT_UART_BUFSZ
 #define BT_UART_BUFSZ 256

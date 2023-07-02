@@ -2,13 +2,13 @@
 #include "ztacx_settings.h"
 
 #include <math.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/sensor.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <shell/shell.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/shell/shell.h>
 
 #ifdef CONFIG_TEMP_NRF5
 static const struct device *temp_dev = DEVICE_DT_GET_ANY(nordic_nrf_temp);

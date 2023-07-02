@@ -2,7 +2,7 @@
 #include "ztacx_settings.h"
 #include "ztacx_button.h"
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 static struct ztacx_leaf *ztacx_buttons[CONFIG_ZTACX_BUTTON_MAX];
 #if CONFIG_EVENTS
@@ -55,7 +55,7 @@ int ztacx_button_init(struct ztacx_leaf *leaf)
 	
 	if (!device_is_ready(ctx->button.port)) {
 		LOG_ERR("Error: button device %s is not ready\n",
-			log_strdup(ctx->button.port->name));
+			ctx->button.port->name);
 		return -ENODEV;
 	}
 
@@ -63,7 +63,7 @@ int ztacx_button_init(struct ztacx_leaf *leaf)
 	if (err != 0) {
 		LOG_ERR("Error %d: failed to configure %s pin %d\n",
 			err,
-			log_strdup(ctx->button.port->name),
+			ctx->button.port->name,
 			ctx->button.pin);
 		return err;
 	}
@@ -72,13 +72,13 @@ int ztacx_button_init(struct ztacx_leaf *leaf)
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (err != 0) {
 		LOG_ERR("Error %d: failed to configure interrupt on %s pin %d\n",
-			err, log_strdup(ctx->button.port->name), ctx->button.pin);
+			err, ctx->button.port->name, ctx->button.pin);
 		return err;
 	}
 
 	gpio_init_callback(&ctx->button_cb_data, button_pressed, BIT(ctx->button.pin));
 	gpio_add_callback(ctx->button.port, &ctx->button_cb_data);
-	LOG_INF("Set up button at %s pin %d\n", log_strdup(ctx->button.port->name), ctx->button.pin);
+	LOG_INF("Set up button at %s pin %d\n", ctx->button.port->name, ctx->button.pin);
 
 	// register a state variable or the button
 	snprintf(ctx->state.name, CONFIG_ZTACX_VALUE_NAME_MAX, "%s_state", leaf->name);

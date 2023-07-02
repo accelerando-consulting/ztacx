@@ -91,7 +91,7 @@ static int parse_hex_setting_words(struct ztacx_variable *settings, int index, i
 	const char *name = setting->name;
 	const char *s = setting->value.val_string;
 	int len = s?strlen(s):0;
-	LOG_DBG("%s s=[%s] min=%d max=%d", log_strdup(name), s?log_strdup(s):"[empty]", min, max);
+	LOG_DBG("%s s=[%s] min=%d max=%d", name, s?s:"[empty]", min, max);
 	if ((min==0) && (len==0)) {
 		if (count_r) *count_r = 0;
 		return 0;
@@ -120,7 +120,7 @@ static int parse_hex_setting(struct ztacx_variable *settings, int index, int min
 	const char *name = setting->name;
 	const char *s = setting->value.val_string;
 	int len = s?strlen(s):0;
-	LOG_DBG("%s s=[%s] min=%d max=%d", log_strdup(name), s?log_strdup(s):"[empty]", min, max);
+	LOG_DBG("%s s=[%s] min=%d max=%d", name, s?s:"[empty]", min, max);
 
 	if ((min==0) && (len==0)) {
 		if (count_r) *count_r = 0;
@@ -130,13 +130,13 @@ static int parse_hex_setting(struct ztacx_variable *settings, int index, int min
 	int bytes = len >> 1;
 	if ((bytes < min) || (bytes > max)) {
 		LOG_ERR("Size of setting %s (%d bytes) is outside limits [%d,%d]",
-			log_strdup(name), bytes, min, max);
+			name, bytes, min, max);
 		return -EMSGSIZE;
 	}
 
 	for (int byte=0; byte<bytes;byte++) {
 		char byte_buf[3] = {s[byte*2],s[byte*2+1],0};
-		//LOG_INF("Parsing at [%s] [%s]", log_strdup(s+(byte*2)), log_strdup(byte_buf));
+		//LOG_INF("Parsing at [%s] [%s]", s+(byte*2), byte_buf);
 		bytes_r[byte]=strtoul(byte_buf, NULL, 16);
 		//LOG_INF("Parsed byte %02x", (int)bytes_r[byte]);
 	}

@@ -5,11 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/shell/shell.h>
@@ -98,12 +97,12 @@ struct ztacx_leaf
 #define ZTACX_CLASS_DEFINE(class_name,class_cb) \
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = ((struct ztacx_leaf_cb)(class_cb)); \
 	struct ztacx_leaf_class ztacx_class_ ## class_name = {.name=#class_name,.super=NULL,.cb=&ztacx_class_cb_ ## class_name}; \
-	int ztacx_class_init_ ## class_name (const struct device *notused) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
+	int ztacx_class_init_ ## class_name (void) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
 	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
 #define ZTACX_SUBCLASS_DEFINE(class_name, super_name , class_cb)				\
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = class_cb;	\
 	struct ztacx_leaf_class ztacx_class_ ## class_name = (struct ztacx_leaf_cb){.name=#class_name,.super=&ztacx_class_ ## super_name,.cb=&ztacx_class_cb_ ## class_name}; \
-	int ztacx_class_init_ ## class_name (const struct device *notused) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
+	int ztacx_class_init_ ## class_name (void) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
 	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
 #define ZTACX_CLASS_AUTO_DEFINE(class_name) \
 	extern int ztacx_##class_name##_init(struct ztacx_leaf *leaf);	\
@@ -140,9 +139,9 @@ struct ztacx_leaf
 #ifdef __main__
 #define ZTACX_LEAF_DEFINE(class_name, leaf_name, context_ptr) \
 	struct ztacx_leaf ztacx_leaf_##class_name##_##leaf_name = {.name=#leaf_name,.class=&(ztacx_class_##class_name), .context=(void*)(context_ptr)}; \
-	int ztacx_leaf_init_##class_name##_##leaf_name(const struct device *notused) {return ztacx_leaf_sys_init(&ztacx_leaf_##class_name##_##leaf_name);} \
+	int ztacx_leaf_init_##class_name##_##leaf_name(void) {return ztacx_leaf_sys_init(&ztacx_leaf_##class_name##_##leaf_name);} \
 	SYS_INIT(ztacx_leaf_init_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_INIT_PRIORITY); \
-	int ztacx_leaf_start_##class_name##_##leaf_name(const struct device *notused) {return ztacx_leaf_sys_start(&ztacx_leaf_##class_name##_##leaf_name);} \
+	int ztacx_leaf_start_##class_name##_##leaf_name(void) {return ztacx_leaf_sys_start(&ztacx_leaf_##class_name##_##leaf_name);} \
 	SYS_INIT(ztacx_leaf_start_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY); 
 #define ZTACX_LEAF_DEFINE_NOCONTEXT(class_name, leaf_name) ZTACX_LEAF_DEFINE(class_name, leaf_name, NULL)
 #define ZTACX_LEAF_DEFINE_AUTOCONTEXT(class_name, leaf_name) \
@@ -166,6 +165,7 @@ enum ztacx_value_kind {
 	ZTACX_VALUE_INT16,
 	ZTACX_VALUE_INT32,
 	ZTACX_VALUE_INT64,
+	ZTACX_VALUE_EVENT,
 	ZTACX_VALUE_MAX
 };
 
@@ -182,6 +182,7 @@ union ztacx_value
 	int16_t val_int16;
 	int32_t val_int32;
 	int64_t val_int64;
+	struct k_event *val_event;
 };
 
 /**
@@ -248,6 +249,9 @@ extern int ztacx_variable_value_set_int16(struct ztacx_variable *v, int16_t valu
 extern int ztacx_variable_value_set_int32(struct ztacx_variable *v, int32_t value);
 extern int ztacx_variable_value_set_int64(struct ztacx_variable *v, int64_t value);
 extern int ztacx_variable_value_inc_int64(struct ztacx_variable *v);
+extern int ztacx_variable_value_set_event(struct ztacx_variable *v, uint32_t event);
+extern int ztacx_variable_value_post_event(struct ztacx_variable *v, uint32_t event);
+extern uint32_t ztacx_variable_value_wait_event(struct ztacx_variable *v, uint32_t mask, k_timeout_t timeout);
 
 extern int ztacx_variable_ptr_set_onchange(struct ztacx_variable *v, struct k_work *work);
 extern int ztacx_variable_set_onchange(const char *name, struct k_work *work);

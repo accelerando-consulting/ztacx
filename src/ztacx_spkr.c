@@ -1,8 +1,8 @@
 #include "ztacx.h"
-#include <device.h>
-#include <shell/shell.h>
-#include <drivers/pwm.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/gpio.h>
 
 static const struct device *spkr_dev = NULL;
 uint16_t spkr_value;

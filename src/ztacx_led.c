@@ -2,9 +2,9 @@
 #include "ztacx_led.h"
 #include "ztacx_settings.h"
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <shell/shell.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/shell/shell.h>
 
 enum led_setting_index {
 	SETTING_CYCLE = 0,
@@ -96,9 +96,11 @@ int ztacx_led_init(struct ztacx_leaf *leaf)
 		}
 	}
 
+#if CONFIG_ZTACX_LEAF_SETTINGS
 	if (context->settings && context->settings_count) {
 		ztacx_settings_register(context->settings, context->settings_count);
 	}
+#endif
 	if (context->values && context->values_count) {
 		ztacx_variables_register(context->values, context->values_count);
 	}
@@ -112,9 +114,9 @@ int ztacx_led_init(struct ztacx_leaf *leaf)
 	/*
 	 * Set up the identification LED
 	 */
-	LOG_INF("Checking status of %s device", log_strdup(leaf->name));
+	LOG_INF("Checking status of %s device", leaf->name);
 	if (!context->gpio->port) {
-		LOG_ERR("LED Device '%s' not configured", log_strdup(leaf->name));
+		LOG_ERR("LED Device '%s' not configured", leaf->name);
 		return -ENODEV;
 	}
 			
@@ -128,7 +130,7 @@ int ztacx_led_init(struct ztacx_leaf *leaf)
 		LOG_ERR("Could not configure LED GPIO");
 	}
 	else {
-		LOG_INF("LED %s on pin %d", log_strdup(leaf->name), context->gpio->pin);
+		LOG_INF("LED %s on pin %d", leaf->name, context->gpio->pin);
 		gpio_pin_set_dt(context->gpio, 0);
 	}
 

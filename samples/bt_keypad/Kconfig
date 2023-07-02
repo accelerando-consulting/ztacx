@@ -1,0 +1,6 @@
+mainmenu "Example"
+
+
+rsource "../../Kconfig.ztacx"
+source "Kconfig.zephyr"
+

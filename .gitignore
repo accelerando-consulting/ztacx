@@ -1,5 +1,7 @@
 samples/*/ztacx
 **/.build
+**/*~
+**/rtt.log
 **/build
 *.swp
 **/.DS_Store

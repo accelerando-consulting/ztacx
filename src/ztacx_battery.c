@@ -2,14 +2,14 @@
 #include "ztacx_settings.h"
 
 #include <math.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/sensor.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
-#include <shell/shell.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/shell/shell.h>
 
 #define INVALID_SIGNED -32768
 
@@ -29,10 +29,10 @@ enum battery_setting_index {
 };
 
 static struct ztacx_variable battery_settings[] = {
-	{"battery_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=60}},
-	{"battery_divider_high", ZTACX_VALUE_UINT16,{.val_uint16 = 1000}},
-	{"battery_divider_low", ZTACX_VALUE_UINT16,{.val_uint16 = 1000}},
-	{"battery_millivolt_change_threshold", ZTACX_VALUE_UINT16,{.val_uint16 = 50}},
+	{"battery_read_interval_sec", ZTACX_VALUE_UINT16,{.val_uint16=CONFIG_ZTACX_BATTERY_READ_INTERVAL}},
+	{"battery_divider_high", ZTACX_VALUE_UINT16,{.val_uint16 = CONFIG_ZTACX_BATTERY_DIVIDER_HIGH}},
+	{"battery_divider_low", ZTACX_VALUE_UINT16,{.val_uint16 = CONFIG_ZTACX_BATTERY_DIVIDER_LOW}},
+	{"battery_millivolt_change_threshold", ZTACX_VALUE_UINT16,{.val_uint16 = CONFIG_ZTACX_BATTERY_CHANGE_THRESHOLD}},
 };
 
 enum battery_value_index {
@@ -140,25 +140,26 @@ void battery_read(struct k_work *work)
 	if (rc == 0) {
 		int32_t raw = battery_samples[0];
 		int32_t val;
-		LOG_DBG("Raw reading is %d", raw);
+		LOG_INF("Raw reading is %d", raw);
 
 		// We are using 1/6th gain comparing to a 600mv
 		// reference, so FSR would be 3.6v
 		//
-		// Divider is 1M-1M so scale by 2x
+		// When divider is 1M-1M  scale by 2x
+		// When divider is 100k-220k scale by 
 		int div_low = battery_settings[SETTING_DIVIDER_LOW].value.val_uint16;
 		int div_high = battery_settings[SETTING_DIVIDER_HIGH].value.val_uint16;
-		val = 3600 * (raw / 1024.0) * (div_high+div_low) / div_low;
-		LOG_DBG("Naive millivolt conversion is %d", val);
+		float scale = (float)(div_high+div_low) / div_low;
+		val = 3600 * (raw / 1024.0) * scale;
+		LOG_INF("Naive millivolt conversion (using scale %.3f) is %d=> %d" , scale, raw, val);
 
-		/*
-		  val = raw;
+		val = raw;
 		adc_raw_to_millivolts(adc_ref_internal(battery_adc),
 				      battery_acc.gain,
 				      battery_asp.resolution,
 				      &val);
-		LOG_DBG("Zephyr millivolt conversion is %d", val);
-		*/
+		LOG_INF("Zephyr millivolt conversion is %d", val);
+
 
 		int delta = abs(val - battery_values[VALUE_MILLIVOLTS].value.val_uint16);
 		int threshold = battery_settings[SETTING_MILLIVOLT_CHANGE_THRESHOLD].value.val_uint16;

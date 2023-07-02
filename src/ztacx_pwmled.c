@@ -1,7 +1,7 @@
 #include "ztacx.h"
-#include <device.h>
-#include <shell/shell.h>
-#include <drivers/pwm.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/pwm.h>
 
 static const struct device *pwmled_dev = NULL;
 bool pwmled_value;

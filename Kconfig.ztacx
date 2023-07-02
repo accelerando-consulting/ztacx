@@ -28,6 +28,26 @@ config ZTACX_LEAF_BATTERY
        default n
        select ADC
 
+config ZTACX_BATTERY_READ_INTERVAL
+       int "Duration between battery level reads in seconds"
+       default 60
+       depends on ZTACX_LEAF_BATTERY
+
+config ZTACX_BATTERY_DIVIDER_LOW
+       int "Value of the low-side resistor in the battery voltage divider"
+       default 220 
+       depends on ZTACX_LEAF_BATTERY
+
+config ZTACX_BATTERY_DIVIDER_HIGH
+       int "Value of the high-side resistor in the battery voltage divider"
+       default 100
+       depends on ZTACX_LEAF_BATTERY
+
+config ZTACX_BATTERY_CHANGE_THRESHOLD
+       int "Threshold (in millivolts) for reporting of battery level changes"
+       default 50
+       depends on ZTACX_LEAF_BATTERY
+
 config ZTACX_LEAF_BT_PERIPHERAL
        bool "Enable Ztacx leaf for Bluetooth Peripheral mode"
        default n

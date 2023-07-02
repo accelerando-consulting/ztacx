@@ -10,7 +10,7 @@
 
 static struct ztacx_variable *kp_pins;
 
-static int app_init(const struct device *unused) 
+static int app_init(void) 
 {
 	LOG_INF("NOTICE Initialising app variables");
 	ZTACX_VAR_FIND_AS(kp_pins, kp0_pins);

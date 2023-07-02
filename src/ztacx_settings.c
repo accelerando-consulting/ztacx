@@ -1,11 +1,11 @@
 #include "ztacx.h"
 #include "ztacx_settings.h"
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #include "fs_mgmt/fs_mgmt.h"
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 #endif
 
 #ifdef CONFIG_MCUMGR_CMD_OS_MGMT
@@ -29,7 +29,7 @@
 #endif
 
 #if CONFIG_STATS
-#include <stats/stats.h>
+#include <zephyr/stats/stats.h>
 
 /* Define an example stats group; approximates seconds since boot. */
 STATS_SECT_START(app_stats)
@@ -120,7 +120,7 @@ int ztacx_settings_load()
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, s, node) {
 		ztacx_variable_describe(desc,sizeof(desc), s);
-		LOG_INF("   %s", log_strdup(desc));
+		LOG_INF("   %s", desc);
 	}
 	return 0;
 }
@@ -157,7 +157,7 @@ int ztacx_settings_register(struct ztacx_variable *s, int count)
 
 static int settings_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
-	LOG_INF("name=%s len=%d", log_strdup(name), (int)len);
+	LOG_INF("name=%s len=%d", name, (int)len);
 
 	const char *next;
 	size_t next_len;
@@ -167,7 +167,7 @@ static int settings_handle_set(const char *name, size_t len, settings_read_cb re
 	struct ztacx_variable *s;
 	SYS_SLIST_FOR_EACH_CONTAINER(list, s, node) {
 		if (settings_name_steq(name, s->name, &next) && !next) {
-			//LOG_INF("Found setting record of kind %d for %s", s->kind, log_strdup(name));
+			//LOG_INF("Found setting record of kind %d for %s", s->kind, name);
 			switch (s->kind) {
 			case ZTACX_VALUE_STRING:
 				if (s->value.val_string==NULL) {
@@ -188,62 +188,62 @@ static int settings_handle_set(const char *name, size_t len, settings_read_cb re
 				break;
 			case ZTACX_VALUE_BOOL:
 				if (len != sizeof(s->value.val_bool)) {
-					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					LOG_ERR("Incorrect size %s:%d",name,len);
 					return -EINVAL;
 				}
 				read_cb(cb_arg, &s->value.val_bool, len);
 				break;
 			case ZTACX_VALUE_BYTE:
 				if (len != sizeof(s->value.val_byte)) {
-					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					LOG_ERR("Incorrect size %s:%d",name,len);
 					return -EINVAL;
 				}
 				read_cb(cb_arg, &s->value.val_byte, len);
 				break;
 			case ZTACX_VALUE_UINT16:
 				if (len != sizeof(s->value.val_uint16)) {
-					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					LOG_ERR("Incorrect size %s:%d",name,len);
 					return -EINVAL;
 				}
 				read_cb(cb_arg, &s->value.val_uint16, len);
 				break;
 			case ZTACX_VALUE_INT16:
 				if (len != sizeof(s->value.val_int16)) {
-					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					LOG_ERR("Incorrect size %s:%d",name,len);
 					return -EINVAL;
 				}
 				read_cb(cb_arg, &s->value.val_int16, len);
 				break;
 			case ZTACX_VALUE_INT32:
 				if (len != sizeof(s->value.val_int32)) {
-					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					LOG_ERR("Incorrect size %s:%d",name,len);
 					return -EINVAL;
 				}
 				read_cb(cb_arg, &s->value.val_int32, len);
 				break;
 			case ZTACX_VALUE_INT64:
 				if (len != sizeof(s->value.val_int64)) {
-					LOG_ERR("Incorrect size %s:%d",log_strdup(name),len);
+					LOG_ERR("Incorrect size %s:%d",name,len);
 					return -EINVAL;
 				}
 				read_cb(cb_arg, &s->value.val_int64, len);
 				break;
 			default:
-				LOG_ERR("Unhandled setting type %s:%d",log_strdup(name),(int)s->kind);
+				LOG_ERR("Unhandled setting type %s:%d",name,(int)s->kind);
 				rc = -EINVAL;
 				break;
 			}
 			/*
 			if (rc == 0) {
 				ztacx_variable_describe(desc, sizeof(desc), s);
-				LOG_INF("Loaded %s", log_strdup(desc));
+				LOG_INF("Loaded %s", desc);
 			}
 			*/
 			return rc;
 		}
 	}
 
-	//NOCOMMIT LOG_WRN("Unhandled setting %s", log_strdup(name));
+	//NOCOMMIT LOG_WRN("Unhandled setting %s", name);
 
 	next_len = settings_name_next(name, &next);
 
@@ -291,7 +291,7 @@ static int settings_handle_export(int (*cb)(const char *name,
 			(void)cb(s->name, &s->value.val_int64, sizeof(s->value.val_int64));
 			break;
 		default:
-			LOG_WRN("Unhandled type for setting %s", log_strdup(s->name));
+			LOG_WRN("Unhandled type for setting %s", s->name);
 		}
 	}
 
@@ -301,7 +301,7 @@ static int settings_handle_export(int (*cb)(const char *name,
 #if 0
 static int settings_handle_get(const char *key, char *val, int val_len_max)
 {
-	LOG_INF("name=%s len=%d\n", log_strdup(key), (int)val_len_max);
+	LOG_INF("name=%s len=%d\n", key, (int)val_len_max);
 	return 0;
 }
 #endif
@@ -335,7 +335,7 @@ static int _print_setting(const char *key, size_t len, settings_read_cb read_cb,
  */
 int cmd_ztacx_settings(const struct shell *shell, size_t argc, char **argv)
 {
-	LOG_INF("cmd_ztacx_settings argc=%d argv[1]=%s", argc, (argc>1)?log_strdup(argv[1]):"");
+	LOG_INF("cmd_ztacx_settings argc=%d argv[1]=%s", argc, (argc>1)?argv[1]:"");
 
 	if (argc <= 1) {
 		LOG_INF("settings load");
@@ -368,7 +368,7 @@ int cmd_ztacx_settings(const struct shell *shell, size_t argc, char **argv)
 	}
 	else if ((argc == 3) && (strcmp(argv[1], "load")==0)) {
 		LOG_INF("settings_load_subtree %s", argv[2]);
-		settings_load_subtree(log_strdup(argv[2]));
+		settings_load_subtree(argv[2]);
 	}
 	else if ((argc == 2) && (strcmp(argv[1], "save")== 0)) {
 		LOG_INF("settings_save");
@@ -502,7 +502,7 @@ struct ztacx_variable *ztacx_setting_find(const char *name)
 			return s;
 		}
 	}
-	LOG_WRN("no setting named '%s' found", log_strdup(name));
+	LOG_WRN("no setting named '%s' found", name);
 	return NULL;
 }
 
@@ -556,7 +556,7 @@ int ztacx_setting_set(struct ztacx_variable *s, const char *value)
 	}
 	char desc[132];
 	ztacx_variable_describe(desc,sizeof(desc), s);
-	LOG_INF("Saved %s", log_strdup(desc));
+	LOG_INF("Saved %s", desc);
 	return err;
 }
 

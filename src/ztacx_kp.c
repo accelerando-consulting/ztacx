@@ -2,9 +2,9 @@
 #include "ztacx_kp.h"
 #include "ztacx_settings.h"
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <shell/shell.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/shell/shell.h>
 
 enum kp_setting_index {
 	SETTING_BUS = 0,
@@ -14,7 +14,8 @@ enum kp_setting_index {
 
 enum kp_value_index {
 	VALUE_OK = 0,
-	VALUE_PINS
+	VALUE_PINS,
+	VALUE_EVENT
 };
 
 static struct ztacx_variable kp_default_settings[] = {
@@ -26,6 +27,7 @@ static struct ztacx_variable kp_default_settings[] = {
 static struct ztacx_variable kp_default_values[] = {
 	{"ok", ZTACX_VALUE_BOOL,{.val_bool=false}},
 	{"pins", ZTACX_VALUE_BYTE,{.val_byte=0xFF}},
+	{"event", ZTACX_VALUE_EVENT,{.val_event=NULL}},
 };
 
 #if CONFIG_SHELL
@@ -94,6 +96,10 @@ int ztacx_kp_init(struct ztacx_leaf *leaf)
 	if (context->settings && context->settings_count) {
 		ztacx_settings_register(context->settings, context->settings_count);
 	}
+
+	k_event_init(&context->event);
+	context->values[VALUE_EVENT].value.val_event = &context->event;
+
 	if (context->values && context->values_count) {
 		ztacx_variables_register(context->values, context->values_count);
 	}
@@ -105,18 +111,31 @@ int ztacx_kp_init(struct ztacx_leaf *leaf)
 		LOG_ERR("No i2c bus device");
 		return -ENODEV;
 	}
-	LOG_INF("Keypad %s uses I2C device %s",
+	LOG_INF("Keypad %s uses I2C bus %s",
 		leaf->name, context->settings[SETTING_BUS].value.val_string);
 	
 	/*
 	 * Set up the i2c bus
 	 */
-	LOG_INF("Checking status of %s device", log_strdup(leaf->name));
+	LOG_INF("Checking status of %s device", leaf->name);
 	if (!device_is_ready(context->dev)) {
 		LOG_ERR("KP device is not ready");
 		return -ENODEV;
 	}
 
+	/* 
+	 * Set the pins to input
+	 */
+	char buf[] = {0xFF};
+	int err = i2c_write(context->dev,
+			    buf,
+			    1,
+			    (CTX_SETTING(ADDR).value.val_uint16));
+	if (err < 0) {
+		LOG_ERR("Failed to configure PCF8574 pins for input");
+		return -EIO;
+	}
+	
 #if CONFIG_SHELL
 	ztacx_shell_cmd_register(((struct shell_static_entry){
 				.syntax=leaf->name,
@@ -129,6 +148,7 @@ int ztacx_kp_init(struct ztacx_leaf *leaf)
 
 int ztacx_kp_start(struct ztacx_leaf *leaf)
 {
+	LOG_INF("start");
 	struct ztacx_kp_context *context = leaf->context;
 	k_work_init_delayable(&(context->scan), kp_scan);
 	k_work_schedule(&context->scan, K_NO_WAIT);
@@ -138,6 +158,7 @@ int ztacx_kp_start(struct ztacx_leaf *leaf)
 
 int ztacx_kp_stop(struct ztacx_leaf *leaf)
 {
+	LOG_INF("stop");
 	struct ztacx_kp_context *context = leaf->context;
 	k_work_cancel_delayable(&context->scan);
 	return 0;
@@ -189,9 +210,13 @@ static int cmd_ztacx_kp(const struct shell *shell, size_t argc, char **argv)
 			     (int)(CTX_SETTING(INTERVAL).value.val_int32),
 			     (int)(CTX_VALUE(PINS).value.val_byte));
 	}
-	if ((argc > 1) && (strcmp(argv[1], "stop")==0)) {
-		LOG_INF("Stopping scan scan");
-		k_work_cancel_delayable(&context->scan);
+	else if ((argc > 1) && (strcmp(argv[1], "stop")==0)) {
+		LOG_INF("Stopping kp scan");
+		ztacx_kp_stop(leaf);
+	}
+	else if ((argc > 1) && (strcmp(argv[1], "start")==0)) {
+		LOG_INF("Starting kp scan");
+		ztacx_kp_start(leaf);
 	}
 	else if ((argc > 1) && (strcmp(argv[1], "addr")==0)) {
 		if (argc > 2) {
@@ -230,25 +255,34 @@ static void kp_scan(struct k_work *work)
 	uint8_t kp_was = CTX_VALUE(PINS).value.val_byte;
 	uint8_t kp_new = 0xFF;
 	
-	int rc = i2c_read(context->dev, &kp_new, 1, (CTX_SETTING(ADDR).value.val_uint16));
+	int rc = i2c_read(context->dev,
+			  &kp_new,
+			  1,
+			  (CTX_SETTING(ADDR).value.val_uint16));
 	if (rc < 0) {
 		LOG_ERR("i2c read error %d", rc);
 	}
 	else {
 		if (kp_new != kp_was) {
 			LOG_DBG("Keypad change %02x => %02x", (int)kp_was, (int)kp_new);
+			ztacx_variable_value_set_byte(&CTX_VALUE(PINS), kp_new);
 			for (int bit=0; bit<8; bit++) {
 				uint8_t was = kp_was&(1<<bit);
 				uint8_t new = kp_new&(1<<bit);
 				if (was==new) continue;
 				if (new==0) {
 					LOG_INF("Button %d press", bit);
+					ztacx_variable_value_set_event(
+						&CTX_VALUE(EVENT),
+						KP_EVENT_PRESS|(1<<bit));
 				}
 				else {
 					LOG_DBG("Button %d release", bit);
+					ztacx_variable_value_set_event(
+						&CTX_VALUE(EVENT),
+						KP_EVENT_RELEASE|(1<<bit));
 				}
 			}
-			CTX_VALUE(PINS).value.val_byte = kp_new;
 		}
 	}
 	

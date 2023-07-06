@@ -146,7 +146,7 @@ void battery_read(struct k_work *work)
 		// reference, so FSR would be 3.6v
 		//
 		// When divider is 1M-1M  scale by 2x
-		// When divider is 100k-220k scale by 
+		// When divider is 100k-220k scale by 1.455
 		int div_low = battery_settings[SETTING_DIVIDER_LOW].value.val_uint16;
 		int div_high = battery_settings[SETTING_DIVIDER_HIGH].value.val_uint16;
 		float scale = (float)(div_high+div_low) / div_low;
@@ -216,12 +216,14 @@ int cmd_ztacx_battery(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	battery_read(NULL);
+#ifdef NOCOMMIT
 #if CONFIG_BT_GATT_CLIENT
 	bool notify = (argc > 1) && (strcmp(argv[1],"notify")==0);
 	if (notify) {
 		bt_gatt_notify(NULL, battery_millivolt_attr,
 			       &battery_millivolt_value, sizeof(battery_millivolt_value));
 	}
+#endif
 #endif
 
 	uint8_t battery_level_percent;

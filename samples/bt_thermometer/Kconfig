@@ -1,0 +1,9 @@
+mainmenu "Example"
+
+config APP_USE_AMBIENT
+       bool "Default to ambient temperature not object"
+       default n
+
+rsource "../../Kconfig.ztacx"
+source "Kconfig.zephyr"
+

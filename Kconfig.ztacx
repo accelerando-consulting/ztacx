@@ -172,5 +172,29 @@ config ZTACX_LEAF_TEMP
        bool "Enable Ztacx leaf for temperature monitoring"
        default n
 
+config ZTACX_TEMP_DEVICE
+       string "Name of sensor to use for temperature readings"
+       default ""
+       depends on ZTACX_LEAF_TEMP
+
+config ZTACX_TEMP_I2C_GENERIC
+       bool "Enable generic I2C temperature sensor"
+       default n
+       depends on ZTACX_LEAF_TEMP
+
+config ZTACX_TEMP_I2C_GENERIC_BUS
+       string "I2C bus for generic I2C temperature sensor"
+       default "I2C_0"
+       depends on ZTACX_TEMP_I2C_GENERIC
+
+config ZTACX_TEMP_I2C_GENERIC_ADDR
+       int "Address for generic I2C temperature sensor"
+       default 74
+       depends on ZTACX_TEMP_I2C_GENERIC
+
+config ZTACX_TEMP_I2C_GENERIC_REGISTER
+       int "Register index for generic I2C temperature sensor"
+       default 7
+       depends on ZTACX_TEMP_I2C_GENERIC
 
 

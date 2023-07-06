@@ -2,7 +2,7 @@
 #if CONFIG_ZTACX_LEAF_TEMP
 /*
  * Settings:
- *	temp_read_interval_sec ZTACX_VALUE_UINT16
+ *	temp_read_interval_msec ZTACX_VALUE_UINT32
  *	temp_centidegree_threshold ZTACX_VALUE_UINT16
  *
  * Values:

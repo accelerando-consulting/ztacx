@@ -5,4 +5,20 @@ then
   exit 0
 fi
 #$MAYBEREMOTE kermit -l $PORT -b 115200 -C "set carrier-watch off,connect"
-$MAYBEREMOTE miniterm --rts 0 --raw $PORT 115200
+
+if [ -n "$ZEPHYR_HELPER" ] 
+then
+  $MAYBEREMOTE miniterm --rts 0 --raw $PORT 115200
+else  
+  while :
+  do
+    if [ -e $PORT ]
+    then
+      miniterm --rts 0 --raw $PORT 115200
+      echo "miniterm exit $$?"
+    else
+      printf "\rwait for ${PORT} `date +%T`"
+    fi
+    sleep 1
+  done
+fi

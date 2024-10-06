@@ -52,6 +52,20 @@ config ZTACX_LEAF_BT_PERIPHERAL
        bool "Enable Ztacx leaf for Bluetooth Peripheral mode"
        default n
 
+config ZTACX_LEAF_BT_CENTRAL
+       bool "Enable Ztacx leaf for Bluetooth Central mode"
+       default n
+
+config ZTACX_BT_CENTRAL_POLL_INTERVAL
+       int "Bluetooth central poll interval in milliseconds (0=off)"
+       default 0
+       depends on ZTACX_LEAF_BT_CENTRAL
+
+config ZTACX_BT_CENTRAL_PERIPHERAL_NAME
+       string "Name of peripheral to search for"
+       default ""
+       depends on ZTACX_LEAF_BT_CENTRAL
+
 config ZTACX_LEAF_BT_UART
        bool "Enable Ztacx leaf for Bluetooth LE UART"
        default n
@@ -67,6 +81,11 @@ config ZTACX_LEAF_KP
 
 config ZTACX_LEAF_LED
        bool "Enable Ztacx leaf for the default status LED"
+       default n
+       select GPIO
+
+config ZTACX_LEAF_LED_STRIP
+       bool "Enable Ztacx leaf for RGB LED strips"
        default n
        select GPIO
 
@@ -103,13 +122,27 @@ config ZTACX_LEAF_LUX
        bool "Enable Ztacx leaf for light level sensor(s)"
        default n
 
+config ZTACX_LEAF_DAC
+       bool "Enable Ztacx leaf for Digital-to-Analog Conversion"
+       default n
+
+config ZTACX_DAC_DEVICE
+       string "Name of device to use for DAC output"
+       default "dac0"
+       depends on ZTACX_LEAF_DAC
+
+config ZTACX_DAC_BITS
+       int "Number of bits of DAC resolution"
+       default 12
+       depends on ZTACX_LEAF_DAC
+
 config ZTACX_LEAF_IMS
-       bool "Enable Ztacx leaf for inerial measurement sensor"
+       bool "Enable Ztacx leaf for inertial measurement sensor"
        default n
 
 config ZTACX_IMS_DEVICE
        string "Name of device to use for IMS readings"
-       default "IMS"
+       default "ims0"
        depends on ZTACX_LEAF_IMS
 
 config ZTACX_IMS_READ_INTERVAL_USEC
@@ -119,7 +152,7 @@ config ZTACX_IMS_READ_INTERVAL_USEC
 
 config ZTACX_IMS_CHANGE_THRESHOLD
        int "Significant change threshold (in cm/s/s)"
-       default 10
+       default 100
        depends on ZTACX_LEAF_IMS
 
 config ZTACX_LEAF_BUTTON

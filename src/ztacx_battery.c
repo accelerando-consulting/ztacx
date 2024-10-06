@@ -149,9 +149,9 @@ void battery_read(struct k_work *work)
 		// When divider is 100k-220k scale by 1.455
 		int div_low = battery_settings[SETTING_DIVIDER_LOW].value.val_uint16;
 		int div_high = battery_settings[SETTING_DIVIDER_HIGH].value.val_uint16;
-		float scale = (float)(div_high+div_low) / div_low;
+		double scale = (double)(div_high+div_low) / div_low;
 		val = 3600 * (raw / 1024.0) * scale;
-		LOG_INF("Naive millivolt conversion (using scale %.3f) is %d=> %d" , scale, raw, val);
+		LOG_INF("Naive millivolt conversion (using scale %.3lf) is %d=> %d" , scale, raw, val);
 
 		val = raw;
 		adc_raw_to_millivolts(adc_ref_internal(battery_adc),
@@ -216,14 +216,12 @@ int cmd_ztacx_battery(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	battery_read(NULL);
-#ifdef NOCOMMIT
 #if CONFIG_BT_GATT_CLIENT
 	bool notify = (argc > 1) && (strcmp(argv[1],"notify")==0);
 	if (notify) {
 		bt_gatt_notify(NULL, battery_millivolt_attr,
 			       &battery_millivolt_value, sizeof(battery_millivolt_value));
 	}
-#endif
 #endif
 
 	uint8_t battery_level_percent;

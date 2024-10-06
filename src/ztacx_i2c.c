@@ -1,6 +1,11 @@
 #include "ztacx.h"
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/shell/shell.h>
+
+#if CONFIG_SHELL
+static int cmd_ztacx_i2c(const struct shell *shell, size_t argc, char **argv);
+#endif
 
 void ztacx_i2c_scan(const char *bus)
 {
@@ -59,10 +64,36 @@ void ztacx_i2c_scan(const char *bus)
 	}
 }
 
+#if CONFIG_SHELL
+static int cmd_ztacx_i2c(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc < 2) {
+		return -ENODEV;
+	}
+
+	struct ztacx_leaf *leaf = ztacx_leaf_get(argv[1]);
+	if (!leaf && !leaf->context) {
+		return -ENODEV;
+	}
+	if ((argc > 3) && (strcmp(argv[2], "scan")==0)) {
+		ztacx_i2c_scan(argv[3]);
+	}
+
+	return(0);
+}
+#endif
 
 
 int ztacx_i2c_init(struct ztacx_leaf *leaf)
 {
+#if CONFIG_SHELL
+	ztacx_shell_cmd_register(((struct shell_static_entry){
+				.syntax=leaf->name,
+				.help="Control ztacx i2c",
+				.handler=&cmd_ztacx_i2c
+				}));
+#endif
+
 	//ztacx_i2c_scan(leaf->name);
 	return 0;
 }

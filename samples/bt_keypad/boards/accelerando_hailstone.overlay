@@ -1,11 +1,40 @@
 
+/ {
+	chosen {
+		zephyr,display = &oled;
+	};
+};
+
 &i2c0 {
 	status = "disabled";
+
 };
 
 &i2c1 {
 	status = "okay";
 
+        i2c0_pcf8574@21 {
+                 compatible = "nxp,pcf857x";
+                 reg = <0x21>;
+                 gpio-controller;
+                 #gpio-cells = <2>;
+                 ngpios = <8>;
+        };
+
+	oled: ssd1306@3c {
+                compatible = "solomon,ssd1306fb";
+                reg = <0x3c>;
+                label = "SSD1306";
+                width = <128>;
+                height = <64>;
+                segment-offset = <0>;
+                page-offset = <0>;
+                display-offset = <0>;
+                multiplex-ratio = <63>;
+                segment-remap;
+                com-invdir;
+                prechargep = <0x22>;
+        };
 };
 
 &spi1 {

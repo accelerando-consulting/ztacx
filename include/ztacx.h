@@ -98,12 +98,12 @@ struct ztacx_leaf
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = ((struct ztacx_leaf_cb)(class_cb)); \
 	struct ztacx_leaf_class ztacx_class_ ## class_name = {.name=#class_name,.super=NULL,.cb=&ztacx_class_cb_ ## class_name}; \
 	int ztacx_class_init_ ## class_name (void) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
-	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
+	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY);
 #define ZTACX_SUBCLASS_DEFINE(class_name, super_name , class_cb)				\
 	struct ztacx_leaf_cb ztacx_class_cb_ ## class_name = class_cb;	\
 	struct ztacx_leaf_class ztacx_class_ ## class_name = (struct ztacx_leaf_cb){.name=#class_name,.super=&ztacx_class_ ## super_name,.cb=&ztacx_class_cb_ ## class_name}; \
 	int ztacx_class_init_ ## class_name (void) { return ztacx_class_register(&ztacx_class_ ## class_name); } \
-	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY); 
+	SYS_INIT(ztacx_class_init_ ## class_name, APPLICATION, ZTACX_CLASS_INIT_PRIORITY);
 #define ZTACX_CLASS_AUTO_DEFINE(class_name) \
 	extern int ztacx_##class_name##_init(struct ztacx_leaf *leaf);	\
 	extern int ztacx_##class_name##_start(struct ztacx_leaf *leaf);	\
@@ -142,7 +142,7 @@ struct ztacx_leaf
 	int ztacx_leaf_init_##class_name##_##leaf_name(void) {return ztacx_leaf_sys_init(&ztacx_leaf_##class_name##_##leaf_name);} \
 	SYS_INIT(ztacx_leaf_init_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_INIT_PRIORITY); \
 	int ztacx_leaf_start_##class_name##_##leaf_name(void) {return ztacx_leaf_sys_start(&ztacx_leaf_##class_name##_##leaf_name);} \
-	SYS_INIT(ztacx_leaf_start_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY); 
+	SYS_INIT(ztacx_leaf_start_##class_name##_##leaf_name, APPLICATION, ZTACX_LEAF_START_PRIORITY);
 #define ZTACX_LEAF_DEFINE_NOCONTEXT(class_name, leaf_name) ZTACX_LEAF_DEFINE(class_name, leaf_name, NULL)
 #define ZTACX_LEAF_DEFINE_AUTOCONTEXT(class_name, leaf_name) \
 	struct ztacx_##class_name##_context ztacx_##class_name##_##leaf_name##_context;	\
@@ -198,9 +198,16 @@ struct ztacx_variable
 };
 int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct ztacx_variable *v, int count);
 
+#define ZTACX_USE_VAR(n) static struct ztacx_variable *n=NULL
+#define ZTACX_USE(n) static struct ztacx_setting *n=NULL
+
+
 #define ZTACX_SETTING_FIND(n) if (!(n=ztacx_setting_find(#n))) {        \
        LOG_ERR("APP ABORT Setting '"#n"' not found");                   \
        return -1;                                                       \
+       }
+#define ZTACX_SETTING_FIND_OPT(n) if (!(n=ztacx_setting_find(#n))) {	\
+	LOG_ERR("Setting '"#n"' not found");				\
        }
 
 #define ZTACX_SETTING_FIND_AS(n,m) if (!(n=ztacx_setting_find(#m))) {	\
@@ -211,6 +218,9 @@ int ztacx_values_register(sys_slist_t *list, struct sys_mutex *mutex, struct zta
 #define ZTACX_VAR_FIND(n) if (!(n=ztacx_variable_find(#n))) {		\
        LOG_ERR("APP ABORT Variable '"#n"' not found");                  \
        return -1;                                                       \
+       }
+#define ZTACX_VAR_FIND_OPT(n) if (!(n=ztacx_variable_find(#n))) {	\
+       LOG_ERR("Variable '"#n"' not found");                            \
        }
 #define ZTACX_VAR_FIND_AS(n,m) if (!(n=ztacx_variable_find(#m))) {	\
        LOG_ERR("APP ABORT Variable '"#m"' not found");                  \
@@ -296,6 +306,9 @@ extern int ztacx_post_sleep(void);
 #if CONFIG_ZTACX_LEAF_GPS
 #include "ztacx_gps.h"
 #endif
+#if CONFIG_ZTACX_LEAF_DAC
+#include "ztacx_dac.h"
+#endif
 #if CONFIG_ZTACX_LEAF_IMS
 #include "ztacx_ims.h"
 #endif
@@ -304,6 +317,9 @@ extern int ztacx_post_sleep(void);
 #endif
 #if CONFIG_ZTACX_LEAF_LED
 #include "ztacx_led.h"
+#endif
+#if CONFIG_ZTACX_LEAF_LED_STRIP
+#include "ztacx_led_strip.h"
 #endif
 #if CONFIG_ZTACX_LEAF_LIDAR
 #include "ztacx_lidar.h"

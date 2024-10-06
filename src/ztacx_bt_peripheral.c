@@ -21,7 +21,7 @@ enum bt_peripheral_setting_index {
 };
 
 static struct ztacx_variable bt_peripheral_settings[] = {
-	{"peripheral_name", ZTACX_VALUE_STRING},
+	{"peripheral_name", ZTACX_VALUE_STRING,{.val_string="ztacx"}},
 	{"peripheral_tx_power", ZTACX_VALUE_UINT16,{.val_uint16 = 0}},
 };
 #endif
@@ -135,41 +135,48 @@ ssize_t bt_read_variable(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		LOG_ERR("Offset handling not implemented");
 		return -EIO;
 	}
-
+	int expect_len ;
 	switch (v->kind) {
 	case ZTACX_VALUE_STRING:
-		if (len < strlen(v->value.val_string)) {
-			LOG_WRN("Unexpected length");
+		expect_len = strlen(v->value.val_string);
+		if (len < expect_len) {
+			LOG_WRN("Unexpected length for string (%d < %d)", len, expect_len);
 		}
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, v->value.val_string, strlen(v->value.val_string));
 	case ZTACX_VALUE_BOOL:
-		if (len != 1) {
-			LOG_WRN("Unexpected length");
+		expect_len = 1;
+		if (len < expect_len) {
+			LOG_WRN("Unexpected length for bool (%d != %d)", len, expect_len);
 		}
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, &v->value.val_bool, sizeof(bool));
 	case ZTACX_VALUE_BYTE:
-		if (len != 1) {
-			LOG_WRN("Unexpected length");
+		expect_len = 1;
+		if (len < expect_len) {
+			LOG_WRN("Unexpected length for byte (%d < %d)", len, expect_len);
 		}
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, &v->value.val_byte, sizeof(uint8_t));
 	case ZTACX_VALUE_UINT16:
-		if (len != 2) {
-			LOG_WRN("Unexpected length");
+		expect_len = 2;
+		if (len < expect_len) {
+			LOG_WRN("Unexpected length for uint16 (%d < %d)", len, expect_len);
 		}
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, &v->value.val_uint16, sizeof(uint16_t));
 	case ZTACX_VALUE_INT16:
-		if (len != 2) {
-			LOG_WRN("Unexpected length");
+		expect_len = 2;
+		if (len < expect_len) {
+			LOG_WRN("Unexpected length for int16 (%d < %d)", len, expect_len);
 		}
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, &v->value.val_int16, sizeof(int16_t));
 	case ZTACX_VALUE_INT32:
-		if (len != 4) {
-			LOG_WRN("Unexpected length");
+		expect_len = 4;
+		if (len < expect_len) {
+			LOG_WRN("Unexpected length for int32 (%d < %d)", len, expect_len);
 		}
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, &v->value.val_int32, sizeof(int32_t));
 	case ZTACX_VALUE_INT64:
-		if (len != 8) {
-			LOG_WRN("Unexpected length");
+		expect_len = 8;
+		if (len < expect_len) {
+			LOG_WRN("Unexpected length for int64 (%d < %d)", len, expect_len);
 		}
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, &v->value.val_int64, sizeof(int64_t));
 	default:
@@ -595,6 +602,7 @@ static void advertise(struct k_work *work)
 	int err;
 
 	stop_advertise();
+	LOG_INF("Starting BLE advertising");
 
 	if (!bt_adv_data || !bt_adv_data_size) {
 		LOG_INF("No advertising data provided yet");

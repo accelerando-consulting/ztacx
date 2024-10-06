@@ -47,11 +47,42 @@ struct ztacx_kp_context ztacx_kp_kp0_context = {
 	.values_count = ARRAY_SIZE(ztacx_kp_kp0_values)
 };
 
+static int _kp_write(struct ztacx_kp_context *context, uint8_t val)
+{
+	char buf[1] = {val};
+	uint16_t addr = CTX_SETTING(ADDR).value.val_uint16;
+	int err = i2c_write(context->dev,
+			    buf,
+			    1,
+			    addr);
+	if (err < 0) {
+		LOG_ERR("Write error (%d)", err);
+		return -EIO;
+	}
+	return 0;
+}
+
+static int _kp_read(struct ztacx_kp_context *context, uint8_t *val_r)
+{
+	char buf[1];
+	uint16_t addr = CTX_SETTING(ADDR).value.val_uint16;
+	int err = i2c_read(context->dev,
+			    buf,
+			    1,
+			    addr);
+	if (err < 0) {
+		LOG_ERR("i2c read error (%d)", err);
+		return -EIO;
+	}
+	if (val_r) *val_r=buf[0];
+	return 0;
+}
+
 int ztacx_kp_init(struct ztacx_leaf *leaf)
 {
 	LOG_INF("ztacx_kp_init %s", leaf->name);
 	struct ztacx_kp_context *context = (struct ztacx_kp_context *)leaf->context;
-	
+
 	if (context) {
 		if (context->copy_default_context) {
 			LOG_INF("Copying default context structure for %s", leaf->name);
@@ -111,9 +142,10 @@ int ztacx_kp_init(struct ztacx_leaf *leaf)
 		LOG_ERR("No i2c bus device");
 		return -ENODEV;
 	}
-	LOG_INF("Keypad %s uses I2C bus %s",
-		leaf->name, context->settings[SETTING_BUS].value.val_string);
-	
+	uint16_t addr = CTX_SETTING(ADDR).value.val_uint16;
+	LOG_INF("Keypad %s uses I2C bus %s at 0x%02x",
+		leaf->name, context->settings[SETTING_BUS].value.val_string, (int)addr);
+
 	/*
 	 * Set up the i2c bus
 	 */
@@ -123,19 +155,6 @@ int ztacx_kp_init(struct ztacx_leaf *leaf)
 		return -ENODEV;
 	}
 
-	/* 
-	 * Set the pins to input
-	 */
-	char buf[] = {0xFF};
-	int err = i2c_write(context->dev,
-			    buf,
-			    1,
-			    (CTX_SETTING(ADDR).value.val_uint16));
-	if (err < 0) {
-		LOG_ERR("Failed to configure PCF8574 pins for input");
-		return -EIO;
-	}
-	
 #if CONFIG_SHELL
 	ztacx_shell_cmd_register(((struct shell_static_entry){
 				.syntax=leaf->name,
@@ -143,6 +162,17 @@ int ztacx_kp_init(struct ztacx_leaf *leaf)
 				.handler=&cmd_ztacx_kp
 				}));
 #endif
+
+	/*
+	 * Set the pins to input
+	 */
+	int err = _kp_write(context, 0xFF);
+	if (err < 0) {
+		LOG_ERR("Failed to configure PCF8574 pins for input");
+		// muddle through, it might come good later
+		//return -EIO;
+	}
+
 	return 0;
 }
 
@@ -181,9 +211,9 @@ static int cmd_ztacx_kp(const struct shell *shell, size_t argc, char **argv)
 		LOG_ERR("Insufficient arguments");
 		return -ENODEV;
 	}
-	for (int i=0; i<argc;i++) {
-		LOG_INF("  argv[%d]=%s", i, argv[i]);
-	}
+	//for (int i=0; i<argc;i++) {
+	//	LOG_INF("  argv[%d]=%s", i, argv[i]);
+	//}
 
 	struct ztacx_leaf *leaf = ztacx_leaf_get(argv[0]);
 	if (!leaf) {
@@ -224,6 +254,29 @@ static int cmd_ztacx_kp(const struct shell *shell, size_t argc, char **argv)
 		}
 		shell_fprintf(shell, SHELL_NORMAL, "%s addr=%d\n", leaf->name, (int)(CTX_SETTING(ADDR).value.val_uint16));
 	}
+	else if ((argc > 2) && (strcmp(argv[1], "write")==0)) {
+		unsigned long val = strtoul(argv[2], NULL, 16);
+		int err = _kp_write(context, (uint8_t)val);
+		if (err < 0) {
+			shell_fprintf(shell, SHELL_ERROR, "%s write error %d\n", leaf->name, err);
+		}
+		else {
+			shell_fprintf(shell, SHELL_NORMAL, "%s write=0x%02x (%d)\n", leaf->name,
+				      (int)val, (int)val);
+		}
+	}
+	else if ((argc > 1) && (strcmp(argv[1], "read")==0)) {
+		uint8_t val;
+		_kp_write(context, 0xFF);
+		int err = _kp_read(context, &val);
+		if (err < 0) {
+			shell_fprintf(shell, SHELL_ERROR, "%s read error %d\n", leaf->name, err);
+		}
+		else {
+			shell_fprintf(shell, SHELL_NORMAL, "%s read=0x%02x\n", leaf->name, (int)val);
+		}
+
+	}
 	else if ((argc > 1) && (strcmp(argv[1], "interval")==0)) {
 		if (argc > 2) {
 			ztacx_variable_value_set_int32(&CTX_SETTING(INTERVAL), atoi(argv[2]));
@@ -235,7 +288,7 @@ static int cmd_ztacx_kp(const struct shell *shell, size_t argc, char **argv)
 }
 #endif
 
-static int kp_leaf_compare_scan(const struct ztacx_leaf *leaf, void *compare) 
+static int kp_leaf_compare_scan(const struct ztacx_leaf *leaf, void *compare)
 {
 	struct ztacx_kp_context *context = leaf->context;
 	if (&context->scan == compare) {
@@ -254,41 +307,32 @@ static void kp_scan(struct k_work *work)
 	struct ztacx_kp_context *context = leaf->context;
 	uint8_t kp_was = CTX_VALUE(PINS).value.val_byte;
 	uint8_t kp_new = 0xFF;
-	
-	int rc = i2c_read(context->dev,
-			  &kp_new,
-			  1,
-			  (CTX_SETTING(ADDR).value.val_uint16));
-	if (rc < 0) {
-		LOG_ERR("i2c read error %d", rc);
-	}
-	else {
-		if (kp_new != kp_was) {
-			LOG_DBG("Keypad change %02x => %02x", (int)kp_was, (int)kp_new);
-			ztacx_variable_value_set_byte(&CTX_VALUE(PINS), kp_new);
-			for (int bit=0; bit<8; bit++) {
-				uint8_t was = kp_was&(1<<bit);
-				uint8_t new = kp_new&(1<<bit);
-				if (was==new) continue;
-				if (new==0) {
-					LOG_INF("Button %d press", bit);
-					ztacx_variable_value_set_event(
-						&CTX_VALUE(EVENT),
-						KP_EVENT_PRESS|(1<<bit));
-				}
-				else {
-					LOG_DBG("Button %d release", bit);
-					ztacx_variable_value_set_event(
-						&CTX_VALUE(EVENT),
-						KP_EVENT_RELEASE|(1<<bit));
-				}
+
+	_kp_write(context, 0xFF);
+	int rc = _kp_read(context, &kp_new);
+	if ((rc == 0) && (kp_new != kp_was)) {
+		LOG_DBG("Keypad change %02x => %02x", (int)kp_was, (int)kp_new);
+		ztacx_variable_value_set_byte(&CTX_VALUE(PINS), kp_new);
+		for (int bit=0; bit<8; bit++) {
+			uint8_t was = kp_was&(1<<bit);
+			uint8_t new = kp_new&(1<<bit);
+			if (was==new) continue;
+			if (new==0) {
+				LOG_INF("Button %d press", bit);
+				ztacx_variable_value_set_event(
+					&CTX_VALUE(EVENT),
+					KP_EVENT_PRESS|(1<<bit));
+			}
+			else {
+				LOG_DBG("Button %d release", bit);
+				ztacx_variable_value_set_event(
+					&CTX_VALUE(EVENT),
+					KP_EVENT_RELEASE|(1<<bit));
 			}
 		}
 	}
-	
+
 	if (!work) return;
-	
+
 	k_work_schedule(&context->scan, K_MSEC(CTX_SETTING(INTERVAL).value.val_int32));
 }
-
-

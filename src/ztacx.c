@@ -13,6 +13,18 @@ static sys_slist_t ztacx_classes;
 static sys_slist_t ztacx_leaves;
 static sys_slist_t ztacx_variables;
 
+const char *ztacx_value_kind_names[ZTACX_VALUE_MAX] = {
+	"ZTACX_VALUE_STRING",
+	"ZTACX_VALUE_BOOL",
+	"ZTACX_VALUE_BYTE",
+	"ZTACX_VALUE_UINT16",
+	"ZTACX_VALUE_INT16",
+	"ZTACX_VALUE_INT32",
+	"ZTACX_VALUE_INT64",
+	"ZTACX_VALUE_EVENT",
+};
+
+
 static int ztacx_init(void) ;
 SYS_INIT(ztacx_init, APPLICATION, ZTACX_INIT_PRIORITY);
 
@@ -95,7 +107,7 @@ static int ztacx_init(void)
 		else {
 		strcpy(device_id_short, device_id_str + strlen(device_id_str) - 4);
 	}
-	
+
 	LOG_INF("NOTICE Hardware id is '%s' [%s]", device_id_str, device_id_short);
 	strncat(name_setting, "-", sizeof(name_setting)-1);
 	strncat(name_setting, device_id_short, sizeof(name_setting)-1);
@@ -372,7 +384,7 @@ void ztacx_variables_show()
 	}
 }
 
-struct ztacx_variable *ztacx_variables_copy(struct ztacx_variable *dst, const struct ztacx_variable *src, int count, const char *prefix) 
+struct ztacx_variable *ztacx_variables_copy(struct ztacx_variable *dst, const struct ztacx_variable *src, int count, const char *prefix)
 {
 	int size = count * sizeof(struct ztacx_variable);
 	if (!dst) return NULL;
@@ -394,11 +406,11 @@ struct ztacx_variable *ztacx_variables_copy(struct ztacx_variable *dst, const st
 			dst[i].name[prefix_len]='_';
 		}
 	}
-	
+
 	return dst;
 }
 
-struct ztacx_variable *ztacx_variables_dup(const struct ztacx_variable *v, int count, const char *prefix) 
+struct ztacx_variable *ztacx_variables_dup(const struct ztacx_variable *v, int count, const char *prefix)
 {
 	int size = count * sizeof(struct ztacx_variable);
 	struct ztacx_variable *result = malloc(size);
@@ -582,8 +594,9 @@ int ztacx_variable_value_set(struct ztacx_variable *setting, const void *value)
 	int size;
 
 	if (!value) return 0;
+
 	// TODO use a mutex for get/set operations
-	
+
 	switch (setting->kind) {
 	case ZTACX_VALUE_STRING: {
 		size = strlen((const char *)value) + 1;
@@ -624,7 +637,7 @@ int ztacx_variable_value_set(struct ztacx_variable *setting, const void *value)
 	if (setting->on_change) {
 		k_work_submit(setting->on_change);
 	}
-	
+
 	return 0;
 }
 
@@ -634,8 +647,11 @@ int ztacx_variable_value_set(struct ztacx_variable *setting, const void *value)
 int ztacx_variable_value_set_string(struct ztacx_variable *s, const char *value)
 {
 	if (!s) {
+		LOG_ERR("Attempt to set null variable (%s)", value);
 		return -EINVAL;
 	}
+	LOG_INF("%s (%s) <= [%s]", s->name, ztacx_value_kind_names[s->kind], value);
+
 	int err = 0;
 
 	switch (s->kind) {
@@ -660,7 +676,7 @@ int ztacx_variable_value_set_string(struct ztacx_variable *s, const char *value)
 		ztacx_variable_value_set(s, &val_byte);
 		break;
 	}
-	case ZTACX_VALUE_UINT16: 
+	case ZTACX_VALUE_UINT16:
 	{
 		uint16_t val_uint16 = atoi(value);
 		ztacx_variable_value_set(s, &val_uint16);
@@ -671,7 +687,7 @@ int ztacx_variable_value_set_string(struct ztacx_variable *s, const char *value)
 		ztacx_variable_value_set(s, &val_int16);
 		break;
 	}
-	case ZTACX_VALUE_INT32: 
+	case ZTACX_VALUE_INT32:
 	{
 		int32_t val_int32 = atoi(value);
 		ztacx_variable_value_set(s, &val_int32);
@@ -686,7 +702,8 @@ int ztacx_variable_value_set_string(struct ztacx_variable *s, const char *value)
 		LOG_ERR("Unhandled variable type %d", (int)s->kind);
 		err = -EINVAL;
 	}
-	if (err != 0) {		LOG_ERR("variable parse failed: %d", err);
+	if (err != 0) {
+		LOG_ERR("variable parse failed: %d", err);
 	}
 	return err;
 }
@@ -757,7 +774,7 @@ bool ztacx_variable_value_get_bool(struct ztacx_variable *v)
 {
 	bool value = false;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", v->name);
+		LOG_ERR("Error fetching value of variable [%s]", v->name);
 	}
 	return value;
 }
@@ -766,7 +783,7 @@ uint8_t ztacx_variable_value_get_byte(struct ztacx_variable *v)
 {
 	uint8_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", v->name);
+		LOG_ERR("Error fetching value of variable [%s]", v->name);
 	}
 	return value;
 }
@@ -775,7 +792,7 @@ uint16_t ztacx_variable_value_get_uint16(struct ztacx_variable *v)
 {
 	uint16_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", v->name);
+		LOG_ERR("Error fetching value of variable [%s]", v->name);
 	}
 	return value;
 }
@@ -784,7 +801,7 @@ int16_t ztacx_variable_value_get_int16(struct ztacx_variable *v)
 {
 	int16_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", v->name);
+		LOG_ERR("Error fetching value of variable [%s]", v->name);
 	}
 	return value;
 }
@@ -793,7 +810,7 @@ int32_t ztacx_variable_value_get_int32(struct ztacx_variable *v)
 {
 	int32_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", v->name);
+		LOG_ERR("Error fetching value of variable [%s]", v->name);
 	}
 	return value;
 }
@@ -802,7 +819,7 @@ int64_t ztacx_variable_value_get_int64(struct ztacx_variable *v)
 {
 	int64_t value = 0;
 	if (ztacx_variable_value_get(v, &value, sizeof(value)) != 0) {
-		LOG_ERR("Error fetching value of variable %s", v->name);
+		LOG_ERR("Error fetching value of variable [%s]", v->name);
 	}
 	return value;
 }
@@ -878,7 +895,7 @@ struct ztacx_variable *ztacx_variable_find(const char *name)
 	return NULL;
 }
 
-int ztacx_variable_get(const char *name, void *value_r, int value_size) 
+int ztacx_variable_get(const char *name, void *value_r, int value_size)
 {
 	struct ztacx_variable *v = ztacx_variable_find(name);
 	if (!v) return -ENOENT;
@@ -886,7 +903,7 @@ int ztacx_variable_get(const char *name, void *value_r, int value_size)
 	return ztacx_variable_value_get(v, value_r, value_size);
 }
 
-int ztacx_variable_set(const char *name, void *value) 
+int ztacx_variable_set(const char *name, void *value)
 {
 	struct ztacx_variable *v = ztacx_variable_find(name);
 	if (!v) return -ENOENT;
@@ -895,7 +912,7 @@ int ztacx_variable_set(const char *name, void *value)
 }
 
 
-int ztacx_variable_ptr_set_onchange(struct ztacx_variable *v, struct k_work *work) 
+int ztacx_variable_ptr_set_onchange(struct ztacx_variable *v, struct k_work *work)
 {
 	if (v->on_change) {
 		return -EEXIST;
@@ -906,7 +923,7 @@ int ztacx_variable_ptr_set_onchange(struct ztacx_variable *v, struct k_work *wor
 
 
 
-int ztacx_variable_set_onchange(const char *name, struct k_work *work) 
+int ztacx_variable_set_onchange(const char *name, struct k_work *work)
 {
 	struct ztacx_variable *v = ztacx_variable_find(name);
 	if (!v) return -ENOENT;

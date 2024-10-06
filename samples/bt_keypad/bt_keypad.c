@@ -159,7 +159,24 @@ BT_GATT_SERVICE_DEFINE(hog_svc,
 );
 
 
+struct key_config 
+{
+	enum hid_kbd_code code;
+	const char *desc;
+};
 
+struct key_config kp_map[] = {
+	{HID_KEY_S, "down"},
+	{HID_KEY_P, "enter"},
+	{HID_KEY_D, "right"},
+	{HID_KEY_A, "left"},
+	{HID_KEY_W, "up"},
+	{HID_KEY_ESC, "escape"},
+	{HID_KEY_BACKSPACE, "backspace"},
+	{HID_KEY_SPACE, "space"}
+};
+	
+/*
 enum hid_kbd_code kp_map[] = {
 	HID_KEY_S, //DOWN,
 	HID_KEY_P, //ENTER,
@@ -170,6 +187,8 @@ enum hid_kbd_code kp_map[] = {
 	HID_KEY_BACKSPACE,
 	HID_KEY_SPACE
 };
+*/
+
 	
 
 static int app_init(void) 
@@ -201,7 +220,7 @@ void connect_change(struct k_work *work)
 	}
 }
 
-static int app_start(const struct device *unused) 
+static int app_start(void) 
 {
 	printk("bt_keypad sample app_start\n");
 
@@ -229,7 +248,7 @@ SYS_INIT(app_init, APPLICATION, ZTACX_APP_INIT_PRIORITY);
 SYS_INIT(app_start, APPLICATION, ZTACX_APP_START_PRIORITY);
 
 
-void main(void)
+int main(void)
 {
 	printk("Ztacx Bluetooth keypad sample\n");
 
@@ -237,7 +256,7 @@ void main(void)
 		uint32_t event = ztacx_variable_value_wait_event(kp0_event, 0xFFFFFFFF, K_FOREVER);
 		if (!event) continue;
 		if (!(event & (KP_EVENT_PRESS|KP_EVENT_RELEASE))) {
-			LOG_WRN("Event mask %08X contains a press nor release event", event);
+			LOG_WRN("Event mask %08X contains neither a press nor release event", event);
 			continue;
 		}
 		if (!(event & 0xFF)) {
@@ -248,8 +267,12 @@ void main(void)
 		
 		for (int i=0; i<8;i++) {
 			if (event & (1<<i)) {
-				key_code = kp_map[i];
-				LOG_INF("Key event for key %d => code %d", i, (int)key_code);
+				key_code = kp_map[i].code;
+				const char *desc = kp_map[i].desc;
+				bool is_press = (event & KP_EVENT_PRESS);
+				LOG_INF("Key %s event for key %d => code %d (%s)",
+					is_press?"PRESS":"RELEASE",
+					i, (int)key_code, desc);
 			}
 		}
 
@@ -263,14 +286,14 @@ void main(void)
 
 		if (!ztacx_variable_value_get_bool(bt_peripheral_connected)) {
 			// not connected
-			LOG_INF("No BT connection");
+			LOG_WRN("No BT connection");
 			continue;
 		}
 		if (!notify_subscribed) {
 			LOG_INF("Device connected but not subscribed to notifications");
 			continue;
 		}
-		LOG_INF("Sending report");
+		//LOG_INF("Sending report");
 		bt_gatt_notify(NULL, &hog_svc.attrs[5], report, sizeof(report));
 	}
 }

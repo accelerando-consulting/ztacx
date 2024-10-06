@@ -19,7 +19,7 @@ SHELL_CMD_REGISTER(clrpin, NULL, "clear a pin on GPIO port 0", cmd_clrpin);
 
 static const struct device *port0=NULL;
 
-void main(void)
+int main(void)
 {
 	printk("Ztacx Shell sample\n");
 	port0 = shell_device_lookup(0, "gpio");

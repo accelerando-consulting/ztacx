@@ -9,7 +9,7 @@
 #include "ztacx.h"
 #include "ztacx_led.h"
 
-void main(void)
+int main(void)
 {
 	printk("Ztacx Blinky sample\n");
 }

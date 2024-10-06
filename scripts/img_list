@@ -1,4 +1,5 @@
-[ -n "$CONN" ] || CONN=`echo $PORT | sed -e 's/\/dev\/tty\.*//'`
+#set -x
+[ -n "$CONN" ] || CONN=`echo $PORT | sed -Ee 's/\/dev\/(tty|cu)\.*//'`
 if [ -z "$ZEPHYR_HELPER" ]
 then 
      sudo  mcumgr --conn $CONN image list

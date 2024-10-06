@@ -51,7 +51,7 @@ static struct ztacx_variable ims_values[]={
 	{"ims_samples", ZTACX_VALUE_INT64, {.val_int64=0}},
 };
 
-static const struct device *ims_dev=NULL;
+static const struct device *ims_dev = DEVICE_DT_GET(DT_ALIAS(accel0));
 static struct k_work_delayable ims_work;
 
 void ims_read(struct k_work *work);
@@ -60,16 +60,21 @@ int cmd_ztacx_ims(const struct shell *shell, size_t argc, char **argv);
 int ztacx_ims_init(struct ztacx_leaf *leaf)
 {
 	LOG_INF("ims_init");
-	ztacx_settings_register(ims_settings, ARRAY_SIZE(ims_settings));
-	ztacx_variables_register(ims_values, ARRAY_SIZE(ims_values));
-
-	ims_dev = device_get_binding(CONFIG_ZTACX_IMS_DEVICE);
-
-	if (!ims_dev) {
-		LOG_ERR("  IMS device not present");
+	//ims_dev = device_get_binding(CONFIG_ZTACX_IMS_DEVICE);
+//	if (!ims_dev) {
+//		ims_dev = device_get_binding(CONFIG_ZTACX_IMS_DEVICE);
+//	}
+	if (!device_is_ready(ims_dev)) {
+		LOG_ERR("  IMS device '%s' not present", CONFIG_ZTACX_IMS_DEVICE);
 		ztacx_variable_value_set_bool(&ims_values[VALUE_OK],false);
 		return -ENODEV;
 	}
+
+	ztacx_settings_register(ims_settings, ARRAY_SIZE(ims_settings));
+	ztacx_variables_register(ims_values, ARRAY_SIZE(ims_values));
+
+	int32_t threshold = ztacx_variable_value_get_int32(&ims_settings[SETTING_CHANGE_THRESHOLD]);
+	LOG_INF("  IMS present on I2C as %s, change threshold %d", ims_dev->name, threshold);
 
 #if CONFIG_SHELL
 	ztacx_shell_cmd_register(((struct shell_static_entry){
@@ -78,9 +83,8 @@ int ztacx_ims_init(struct ztacx_leaf *leaf)
 				.handler=&cmd_ztacx_ims
 				}));
 #endif
-
-	LOG_INF("  IMS present on I2C as %s", ims_dev->name);
 	ztacx_variable_value_set_bool(&ims_values[VALUE_OK],true);
+	LOG_INF("done");
 	return 0;
 }
 
@@ -101,11 +105,12 @@ static bool update_variable_peak(struct ztacx_variable *v, struct ztacx_variable
 	bool significant_change = !first_reading && (change >= change_threshold);
 	if (first_reading || significant_change) {
 		ztacx_variable_value_set(v, &level);
-		//LOG_INF("IMS %s level %d", v->name, (int)level);
+		//LOG_INF("IMS %s level %d (change %d > threshold %d)",
+		//v->name, (int)level, change, change_threshold);
 
 		int32_t peak_level = ztacx_variable_value_get_int32(peak_v);
 		if (peak_level == INVALID_LEVEL || (abs(level)>peak_level)) {
-			LOG_INF("IMS %s new peak %d", v->name, (int)level);
+			//LOG_INF("IMS %s new peak %d", v->name, (int)level);
 			peak_level = abs(level);
 			ztacx_variable_value_set_int32(peak_v, peak_level);
 		}
@@ -117,11 +122,10 @@ static bool update_variable_peak(struct ztacx_variable *v, struct ztacx_variable
 void ims_read(struct k_work *work)
 {
 	int rc;
-	LOG_DBG("ims_read");
+	//LOG_INF("ims_read");
 
-	ims_dev = device_get_binding(CONFIG_ZTACX_IMS_DEVICE);//NOCOMMIT
-	
 	if (!ims_dev || !ztacx_variable_value_get_bool(&ims_values[VALUE_OK])) {
+		LOG_ERR("IMS Sensor not available");
 		return;
 	}
 
@@ -133,6 +137,15 @@ void ims_read(struct k_work *work)
 		
 		struct sensor_value accel[3];
 		rc = sensor_channel_get(ims_dev, SENSOR_CHAN_ACCEL_XYZ, accel);
+		if (rc < 0) {
+			printf("ERROR: sensor channel get failed: %d\n", rc);
+			return;
+		}
+		//LOG_INF("%u: x %f , y %f , z %f",
+		//       k_uptime_get_32(),
+		//       sensor_value_to_double(&accel[0]),
+		//       sensor_value_to_double(&accel[1]),
+		//       sensor_value_to_double(&accel[2]));
 
 #if CONFIG_ADXL345
 		// ADXL345 reports directly in cm/s/s
@@ -142,12 +155,20 @@ void ims_read(struct k_work *work)
 		int z_cmpsps = accel[2].val1 ;
 #else
 		// sane sensors report in m/s because it is not 1973
+		//LOG_INF("IMS XYZ reading [%d.%06d,%d.%06d,%d.%06d]",
+		//	(int)(accel[0].val1),(int)abs(accel[0].val2),
+		//	(int)(accel[1].val1),(int)abs(accel[1].val2),
+		//	(int)(accel[2].val1),(int)abs(accel[2].val2)
+		//	);
 		int x_cmpsps = accel[0].val1*100+accel[0].val2/10000;
 		int y_cmpsps = accel[1].val1*100+accel[1].val2/10000;
 		int z_cmpsps = accel[2].val1*100+accel[2].val2/10000;
 #endif
 	
-		int m_cmpsps = sqrt((x_cmpsps*x_cmpsps)+(y_cmpsps*y_cmpsps)+(z_cmpsps*z_cmpsps));                 // polar magnitude of acceleration in cm/s/s
+		// polar magnitude of acceleration in cm/s/s
+		int m_cmpsps = sqrt((x_cmpsps*x_cmpsps)+
+				    (y_cmpsps*y_cmpsps)+
+				    (z_cmpsps*z_cmpsps));
 		//LOG_INF("Acceleration vector magnitude is %dcm/s/s", m_cmpsps);
 
 		int change_threshold = ztacx_variable_value_get_int32(&ims_settings[SETTING_CHANGE_THRESHOLD]);
@@ -159,7 +180,7 @@ void ims_read(struct k_work *work)
 		change |= update_variable_peak(&ims_values[VALUE_LEVEL_Z], &ims_values[VALUE_PEAK_Z], z_cmpsps, change_threshold);
 		ztacx_variable_value_inc_int64(&ims_values[VALUE_SAMPLES]);
 
-#if 0  // CONFIG_BT_GATT_CLIENT
+#if 0 // CONFIG_BT_GATT_CLIENT
 		if (change && ztacx_variable_value_get_bool(&ims_values[VALUE_NOTIFY])) {
 			bt_gatt_notify(NULL, ims_value_attr, &mag_mg, sizeof(mag_mg));
 		}

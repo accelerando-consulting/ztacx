@@ -1,3 +1,4 @@
+#set -x
 if grep ^CONFIG_APP_BUILD_NUMBER= prj.conf >/dev/null
 then
 perl -pi -e '
@@ -11,7 +12,7 @@ perl -pi -e '
   exit 0
 fi  
 
-CONFIG=config.h
+CONFIG=
 for candidate in config.h include/config.h src/config.h main.c src/main.c *.c src/*.c
 do
   if [ -e "$candidate" ] 
@@ -23,12 +24,22 @@ do
     fi
   fi
 done
-[ -e "$CONFIG" ] || exit 1
+if [ -e "$CONFIG" ]
+then
+    perl -pi -e '
+	 if (/^#define BUILD_NUMBER (\d+)/) {
+	    my $oldbuild=$1;
+	    my $newbuild=$oldbuild+1;
+	    s/BUILD_NUMBER $oldbuild/BUILD_NUMBER $newbuild/;
+	  }
+      ' ${CONFIG}
+fi      
 perl -pi -e '
-     if (/^#define BUILD_NUMBER (\d+)/) {
+    if (/^CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="[\d\.]+\+(\d+)"/) {
      	my $oldbuild=$1;
 	my $newbuild=$oldbuild+1;
-	s/BUILD_NUMBER $oldbuild/BUILD_NUMBER $newbuild/;
-      }
-  ' ${CONFIG}
-grep BUILD_NUMBER ${CONFIG}
+        s/\+$oldbuild/+$newbuild/;
+    }
+    ' prj.conf
+[ -e "${CONFIG}" ] && grep BUILD_NUMBER ${CONFIG}
+grep SIGN_VERSION prj.conf

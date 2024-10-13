@@ -162,6 +162,17 @@ int ztacx_led_strip_init(struct ztacx_leaf *leaf)
 
 	LOG_INF("LED string ready, %s (i2s) with %d pixels", context->dev->name, STRIP_NUM_PIXELS);
 
+	// test pattern at init
+	for (int i=ARRAY_SIZE(colors); i >= 0; i--) {
+		memcpy(&context->pixels[0], &colors[i-1], sizeof(struct led_rgb));
+		int rc = led_strip_update_rgb(context->dev, context->pixels, STRIP_NUM_PIXELS);
+		if (rc) {
+			LOG_ERR("couldn't update strip: %d", rc);
+		}
+		k_sleep(K_MSEC(100));
+	}
+	ztacx_led_strip_off(context);
+
 	return 0;
 }
 
@@ -214,17 +225,6 @@ int ztacx_led_strip_start(struct ztacx_leaf *leaf)
 
 	k_work_schedule(&context->refresh, K_SECONDS(1));
 	context->cursor = ztacx_variable_value_get_uint16(&(ztacx_led_strip_values[VALUE_CURSOR]));
-
-	// test pattern at startup
-	for (int i=ARRAY_SIZE(colors); i >= 0; i--) {
-		memcpy(&context->pixels[0], &colors[i-1], sizeof(struct led_rgb));
-		int rc = led_strip_update_rgb(context->dev, context->pixels, STRIP_NUM_PIXELS);
-		if (rc) {
-			LOG_ERR("couldn't update strip: %d", rc);
-		}
-		k_sleep(K_MSEC(100));
-	}
-	ztacx_led_strip_off(context);
 
 	return 0;
 }
@@ -283,12 +283,11 @@ static void ztacx_led_strip_cursor_onchange(struct k_work *work)
 
 static void ztacx_led_strip_color_onchange(struct k_work *work)
 {
-	LOG_INF("");
 	//TODO does it make sense to support multi instances?  see led class if sso
 	struct ztacx_led_strip_context *context = &ztacx_led_strip_context;
 	const char *c = ztacx_led_strip_values[VALUE_COLOR].value.val_string;
 	struct led_rgb color=RGB(0,0,0);
-	LOG_INF("cursor=%d color=%s", context->cursor, c);
+	LOG_DBG("cursor=%d color=%s", context->cursor, c);
 
 	if (c==NULL) {
 		return;

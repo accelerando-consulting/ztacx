@@ -1,4 +1,5 @@
 set -e
+[ -x ./dist.sh ] && exec ./dist.sh
 [ "$ZEPHYR_SIGN" = "1" ] || OBJECT=zephyr.signed && OBJECT=zephyr
 [ -n "$BUILD_NUMBER" ] || BUILD_NUMBER=`grep ^CONFIG_APP_BUILD_NUMBER= prj.conf | cut -d= -f2`
 [ -n "$BUILD_NUMBER" ] || BUILD_NUMBER=`grep BUILD_NUMBER src/config.h | awk '{print $3}'`

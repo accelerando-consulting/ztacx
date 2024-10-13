@@ -635,6 +635,7 @@ int ztacx_variable_value_set(struct ztacx_variable *setting, const void *value)
 		return -EINVAL;
 	}
 	if (setting->on_change) {
+		LOG_DBG("Trigger on-change for %s", setting->name);
 		k_work_submit(setting->on_change);
 	}
 
@@ -650,7 +651,7 @@ int ztacx_variable_value_set_string(struct ztacx_variable *s, const char *value)
 		LOG_ERR("Attempt to set null variable (%s)", value);
 		return -EINVAL;
 	}
-	LOG_INF("%s (%s) <= [%s]", s->name, ztacx_value_kind_names[s->kind], value);
+	LOG_DBG("%s (%s) <= [%s]", s->name, ztacx_value_kind_names[s->kind], value);
 
 	int err = 0;
 

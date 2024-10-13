@@ -1,4 +1,5 @@
 #pragma once
+#include <zephyr/settings/settings.h>
 
 extern int ztacx_settings_init(struct ztacx_leaf *leaf);
 extern int ztacx_settings_start(struct ztacx_leaf *leaf);

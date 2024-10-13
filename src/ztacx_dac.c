@@ -16,9 +16,11 @@ enum dac_setting_index {
 	SETTING_BITS = 0
 };
 
+#if CONFIG_ZTACX_LEAF_SETTINGS
 static struct ztacx_variable dac_settings[] = {
 	{"dac_bits", ZTACX_VALUE_INT32,{.val_int32=CONFIG_ZTACX_DAC_BITS}},
 };
+#endif
 
 enum dac_value_index {
 	VALUE_OK = 0,
@@ -27,6 +29,9 @@ enum dac_value_index {
 
 static struct ztacx_variable dac_values[]={
 	{"dac_ok", ZTACX_VALUE_BOOL, {.val_bool=false}},
+#if !CONFIG_ZTACX_LEAF_SETTINGS
+	{"dac_bits", ZTACX_VALUE_INT32,{.val_int32=CONFIG_ZTACX_DAC_BITS}},
+#endif
 	{"dac_level", ZTACX_VALUE_INT32, {.val_int32=INVALID_LEVEL}},
 };
 
@@ -50,7 +55,9 @@ int cmd_ztacx_dac(const struct shell *shell, size_t argc, char **argv);
 int ztacx_dac_init(struct ztacx_leaf *leaf)
 {
 	LOG_INF("dac_init");
+#if CONFIG_ZTACX_LEAF_SETTINGS
 	ztacx_settings_register(dac_settings, ARRAY_SIZE(dac_settings));
+#endif
 	ztacx_variables_register(dac_values, ARRAY_SIZE(dac_values));
 
 	if (!dac_dev) {

@@ -12,17 +12,21 @@ extern int ztacx_bt_central_start(struct ztacx_leaf *leaf);
 
 struct ztacx_bt_central_context 
 {
-//	struct btl_addr_le_t peripheral_addr;
+	bt_addr_le_t peripheral_addr;
 	struct bt_conn *conn;
-	uint16_t conn_handle;
+	//uint16_t conn_handle;
 	struct bt_gatt_discover_params discover_params;
-	struct bt_gatt_discover_params discover_characteristic_params;
-	struct bt_gatt_discover_params discover_descriptor_params;
-	uint16_t characteristic_handle[PERIPHERAL_CHARACTERISTIC_COUNT];
-	uint16_t read_handles[PERIPHERAL_CHARACTERISTIC_COUNT];
-	struct bt_gatt_subscribe_params subscribe_params[PERIPHERAL_CHARACTERISTIC_COUNT];
-	const struct bt_uuid *discover_service_uuid;
-	struct bt_gatt_read_params read_params;
+	//struct bt_gatt_discover_params discover_characteristic_params;
+	//struct bt_gatt_discover_params discover_descriptor_params;
+	//uint16_t characteristic_handle[PERIPHERAL_CHARACTERISTIC_COUNT];
+	//uint16_t read_handles[PERIPHERAL_CHARACTERISTIC_COUNT];
+	//struct bt_gatt_subscribe_params subscribe_params[PERIPHERAL_CHARACTERISTIC_COUNT];
+	//const struct bt_uuid *discover_service_uuid;
+	//struct bt_gatt_read_params read_params;
+
+	//TODO this is a hack, make a UUID value type, and a value ref value type
+	struct bt_uuid_16 subscribe16_uuid;
+	struct bt_gatt_subscribe_params subscribe16_params;
 	int8_t rssi;
 };
 

@@ -31,7 +31,18 @@ static struct ztacx_variable dac_values[]={
 };
 
 static const struct device *dac_dev= DEVICE_DT_GET(DT_ALIAS(dac0));
-static struct k_work_delayable dac_work;
+
+#define DAC_CHANNEL_ID 0
+#define DAC_RESOLUTION 12
+
+static const struct dac_channel_cfg dac_ch_cfg = {
+	.channel_id  = DAC_CHANNEL_ID,
+	.resolution  = DAC_RESOLUTION,
+	.buffered = true
+};
+
+
+static struct k_work_delayable dac_update_work;
 
 void dac_update(struct k_work *work);
 int cmd_ztacx_dac(const struct shell *shell, size_t argc, char **argv);
@@ -67,7 +78,15 @@ int ztacx_dac_init(struct ztacx_leaf *leaf)
 
 int ztacx_dac_start(struct ztacx_leaf *leaf)
 {
-	k_work_init_delayable(&dac_work, dac_update);
+	int err = dac_channel_setup(dac_dev, &dac_ch_cfg);
+	if (err != 0) {
+		LOG_ERR("dac_channel_setup failed (err=%d)", err);
+		return 0;
+	}
+
+
+
+	k_work_init_delayable(&dac_update_work, dac_update);
 	//k_work_schedule(&dac_work, K_NO_WAIT);
 
 	return 0;
@@ -75,33 +94,48 @@ int ztacx_dac_start(struct ztacx_leaf *leaf)
 
 void dac_update(struct k_work *work)
 {
-	LOG_DBG("dac_update");
+	LOG_INF("dac_update");
 
 	if (!device_is_ready(dac_dev) || !ztacx_variable_value_get_bool(&dac_values[VALUE_OK])) {
+		LOG_WRN("DAC not ready");
 		return;
 	}
 
 	uint32_t dac_level = ztacx_variable_value_get_bool(&dac_values[VALUE_LEVEL]);
-	if (dac_level == INVALID_LEVEL)
+	if (dac_level == INVALID_LEVEL) {
+		LOG_WRN("Level is invalid");
 		return;
+	}
 
+	LOG_INF("Writing DAC value %lu", (unsigned long)dac_level);
+	int err = dac_write_value(dac_dev, DAC_CHANNEL_ID, dac_level);
+	if (err != 0) {
+		LOG_ERR("dac_write_value failed (err=%d)", err);
+	}
 
 	return;
 }
 
 int cmd_ztacx_dac(const struct shell *shell, size_t argc, char **argv)
 {
+	uint32_t level;
+
+
 	LOG_INF("cmd_ztacx_dac argc=%d", argc);
 	if (!dac_values[VALUE_OK].value.val_bool) {
-		shell_fprintf(shell, SHELL_NORMAL,"DAC device not found\n");
+		shell_fprintf(shell, SHELL_ERROR,"DAC device not found\n");
 		return -1;
 	}
 	//dac_dev = device_get_binding(CONFIG_ZTACX_DAC_DEVICE);
-	if (argc < 1) return -1;
-	int32_t level = atoi(argv[1]);
+	if (argc < 2) {
+		level = ztacx_variable_value_get_bool(&dac_values[VALUE_LEVEL]);
+		shell_fprintf(shell, SHELL_NORMAL, "DAC value is %d\n", level);
+		return 0;
+	}
 
+	level = atoi(argv[1]);
 	ztacx_variable_value_set_int32(&(dac_values[VALUE_LEVEL]), level);
-	k_work_schedule(&dac_work, K_NO_WAIT);
+	k_work_schedule(&dac_update_work, K_NO_WAIT);
 	shell_fprintf(shell, SHELL_NORMAL,"DAC output %d\n", (int)level);
 	return 0;
 }
